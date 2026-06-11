@@ -1,0 +1,16 @@
+{
+  "name": "craque-da-copa-hn",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Craque da Copa HN - quiz independente com Netlify Functions e Supabase",
+  "scripts": {
+    "dev": "netlify dev",
+    "start": "netlify dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.36.0"
+  }
+}

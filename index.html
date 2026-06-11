@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Craque da Copa HN</title>
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <a href="/"><img src="/assets/Logo_limpa.png" class="logo" alt="HN Notícias"></a>
+      <nav class="nav">
+        <a href="#ranking">Ranking</a>
+        <a href="#classificados">Classificados</a>
+        <a href="#historico">Ciclos anteriores</a>
+        <a href="/admin.html">Admin</a>
+      </nav>
+    </header>
+
+    <main id="app">
+      <section class="hero">
+        <div class="card">
+          <div class="kicker">Central da Copa HN</div>
+          <h1>Craque da Copa HN</h1>
+          <p class="lead">
+            Teste seus conhecimentos sobre Copa do Mundo, acompanhe a jornada do Brasil
+            e participe do sorteio do ciclo atual.
+          </p>
+
+          <div class="rules">
+            <div class="rule">20 perguntas</div>
+            <div class="rule">11 acertos para classificar</div>
+            <div class="rule">Pode tentar de novo se não classificar</div>
+            <div class="rule">Ranking público</div>
+          </div>
+
+          <div class="actions">
+            <button class="btn" id="startBtn">Começar quiz</button>
+            <a class="btn secondary" href="#ranking">Ver ranking</a>
+          </div>
+          <div id="homeNotice" class="toast hidden"></div>
+        </div>
+
+        <aside class="card prize-card">
+          <div class="kicker">Ciclo atual</div>
+          <h2 id="cycleTitle">Carregando...</h2>
+          <p class="meta" id="cyclePeriod"></p>
+          <div class="prize-name" id="prizeName">Prêmio do ciclo</div>
+          <p id="prizeDescription" class="lead" style="font-size:16px"></p>
+          <p class="meta">Parceiro: <strong id="partnerName">Parceiro da semana</strong></p>
+          <div class="actions">
+            <a class="btn gold" id="partnerBtn" target="_blank" rel="noopener">Seguir parceiro</a>
+            <a class="btn secondary" id="hnBtn" target="_blank" rel="noopener">Seguir HN Notícias</a>
+          </div>
+        </aside>
+      </section>
+
+      <section id="identifySection" class="card hidden" style="margin-top:24px">
+        <div class="section-title"><h2>Identificação</h2></div>
+        <div class="form" style="max-width:520px">
+          <label>CPF</label>
+          <input class="input" id="cpfInput" placeholder="___.___.___-__" inputmode="numeric" autocomplete="off">
+          <button class="btn" id="identifyBtn">Continuar</button>
+          <p class="meta">Usamos o CPF apenas para controlar sua participação no ciclo.</p>
+        </div>
+      </section>
+
+      <section id="registerSection" class="card hidden" style="margin-top:24px">
+        <div class="section-title"><h2>Complete seu cadastro</h2></div>
+        <div class="form" style="max-width:620px">
+          <label>Nome completo</label>
+          <input class="input" id="nameInput">
+          <label>WhatsApp</label>
+          <input class="input" id="whatsappInput" inputmode="numeric" placeholder="(__) _____-____">
+          <label>Cidade</label>
+          <input class="input" id="cityInput">
+          <label style="display:flex;gap:10px;align-items:flex-start">
+            <input type="checkbox" id="acceptInput">
+            <span>Declaro que tenho 18 anos ou mais e aceito o regulamento da ação.</span>
+          </label>
+          <button class="btn" id="registerBtn">Salvar e começar</button>
+        </div>
+      </section>
+
+      <section id="knownSection" class="card hidden" style="margin-top:24px">
+        <div class="section-title"><h2 id="knownTitle">Olá!</h2></div>
+        <p id="knownData" class="lead"></p>
+        <div class="actions">
+          <button class="btn" id="startAttemptKnownBtn">Começar quiz</button>
+        </div>
+      </section>
+
+      <section id="alreadyClassifiedSection" class="card hidden" style="margin-top:24px">
+        <div class="section-title"><h2>Você já está classificado!</h2></div>
+        <p class="lead" id="alreadyText"></p>
+        <div class="actions">
+          <a class="btn" href="#classificados">Ver lista de classificados</a>
+          <a class="btn gold partner-link" target="_blank" rel="noopener">Seguir parceiro</a>
+          <a class="btn secondary hn-link" target="_blank" rel="noopener">Seguir HN Notícias</a>
+        </div>
+      </section>
+
+      <section id="quizSection" class="card quiz-wrap hidden" style="margin-top:24px">
+        <div class="meta" id="questionCounter">Pergunta 1 de 20</div>
+        <div class="progress"><span id="progressBar"></span></div>
+        <h2 class="question-title" id="questionText"></h2>
+        <div class="options" id="optionsWrap"></div>
+        <div class="actions">
+          <button class="btn" id="nextQuestionBtn" disabled>Avançar</button>
+        </div>
+        <p class="meta">Depois de avançar, não será possível voltar. As respostas corretas não serão exibidas durante o ciclo.</p>
+      </section>
+
+      <section id="resultSection" class="card hidden" style="margin-top:24px">
+        <div class="section-title"><h2 id="resultTitle"></h2></div>
+        <p class="lead" id="resultText"></p>
+        <div class="actions" id="resultActions"></div>
+      </section>
+
+      <section id="ranking" style="margin-top:34px">
+        <div class="section-title">
+          <h2>Top 20 do ciclo</h2>
+          <button class="btn secondary" id="reloadRankingBtn">Atualizar</button>
+        </div>
+        <div class="ranking-grid" id="topCards"></div>
+        <div class="card table-card" style="margin-top:14px">
+          <table class="table">
+            <thead><tr><th>Posição</th><th>Participante</th><th>Cidade</th><th>Pontuação</th></tr></thead>
+            <tbody id="rankingBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="classificados" style="margin-top:34px">
+        <div class="section-title">
+          <h2>Lista completa de classificados</h2>
+          <input class="input" id="classifiedSearch" placeholder="Buscar nome..." style="max-width:280px">
+        </div>
+        <div class="card table-card">
+          <table class="table">
+            <thead><tr><th>Participante</th><th>Cidade</th><th>Pontuação</th><th>Status</th></tr></thead>
+            <tbody id="classifiedBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="historico" style="margin-top:34px">
+        <div class="section-title"><h2>Ciclos anteriores</h2></div>
+        <div class="card">
+          <p class="lead">Os ciclos encerrados aparecerão aqui, com ranking, classificados e vencedor.</p>
+          <div id="historyWrap"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      Craque da Copa HN — HN Notícias
+    </footer>
+  </div>
+
+  <script src="/assets/app.js"></script>
+</body>
+</html>

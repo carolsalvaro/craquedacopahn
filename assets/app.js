@@ -1,0 +1,261 @@
+const API = "/api";
+const state = {
+  activeCycle: null,
+  participant: null,
+  attempt: null,
+  questions: [],
+  currentIndex: 0,
+  selectedOption: null
+};
+
+const $ = (id) => document.getElementById(id);
+
+function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
+function formatCPF(v){
+  v = onlyDigits(v).slice(0,11);
+  return v.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+}
+function formatPhone(v){
+  v = onlyDigits(v).slice(0,11);
+  if(v.length <= 10) return v.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d)/, "$1-$2");
+  return v.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2");
+}
+function fmtDate(iso){
+  if(!iso) return "A definir";
+  return new Date(iso).toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit", year:"numeric"});
+}
+async function api(path, options = {}){
+  const res = await fetch(API + path, {
+    headers: {"Content-Type":"application/json", ...(options.headers || {})},
+    ...options
+  });
+  const data = await res.json().catch(() => ({}));
+  if(!res.ok) throw new Error(data.error || "Erro na solicitação");
+  return data;
+}
+function hideFlow(){
+  ["identifySection","registerSection","knownSection","alreadyClassifiedSection","quizSection","resultSection"].forEach(id => $(id).classList.add("hidden"));
+}
+function showNotice(msg){
+  const n = $("homeNotice");
+  n.textContent = msg;
+  n.classList.remove("hidden");
+}
+function setPartnerLinks(){
+  const prize = state.activeCycle?.prize || {};
+  const partnerUrl = prize.partner_instagram_url || "#";
+  const hnUrl = state.activeCycle?.settings?.hn_instagram_url || "https://www.instagram.com/hnnoticias/";
+  document.querySelectorAll(".partner-link").forEach(a => a.href = partnerUrl);
+  document.querySelectorAll(".hn-link").forEach(a => a.href = hnUrl);
+}
+
+async function loadActiveCycle(){
+  try{
+    const data = await api("/active-cycle");
+    state.activeCycle = data.cycle;
+    const c = data.cycle;
+    $("cycleTitle").textContent = c?.title || "Nenhum ciclo ativo";
+    $("cyclePeriod").textContent = c ? `${fmtDate(c.start_at)} a ${fmtDate(c.end_at)}` : "";
+    $("prizeName").textContent = c?.prize?.prize_name || "Prêmio do ciclo a definir";
+    $("prizeDescription").textContent = c?.prize?.prize_description || "O prêmio deste ciclo será divulgado em breve.";
+    $("partnerName").textContent = c?.prize?.partner_name || "Parceiro da semana";
+    $("partnerBtn").textContent = c?.prize?.partner_button_text || "Seguir parceiro";
+    $("partnerBtn").href = c?.prize?.partner_instagram_url || "#";
+    $("hnBtn").href = c?.settings?.hn_instagram_url || "https://www.instagram.com/hnnoticias/";
+    setPartnerLinks();
+
+    if(!c){
+      $("startBtn").disabled = true;
+      showNotice("No momento não há ciclo ativo. Volte em breve.");
+    } else {
+      $("startBtn").disabled = false;
+    }
+  }catch(e){
+    showNotice(e.message);
+  }
+}
+
+async function loadRanking(){
+  try{
+    const data = await api("/ranking?top=20");
+    const rows = data.items || [];
+    const top = rows.slice(0,3);
+    $("topCards").innerHTML = top.map(r => `
+      <div class="rank-card top">
+        <div class="rank-pos">${r.position}º lugar</div>
+        <div class="rank-name">${r.display_name}</div>
+        <div class="meta">${r.city}</div>
+        <div class="rank-score">${r.score_text} acertos</div>
+      </div>
+    `).join("") || `<div class="card"><p class="meta">Ainda não há classificados neste ciclo.</p></div>`;
+    $("rankingBody").innerHTML = rows.map(r => `
+      <tr><td>${r.position}º</td><td>${r.display_name}</td><td>${r.city}</td><td><span class="badge success">${r.score_text}</span></td></tr>
+    `).join("");
+  }catch(e){ console.error(e); }
+}
+let allClassified = [];
+async function loadClassified(){
+  try{
+    const data = await api("/classified");
+    allClassified = data.items || [];
+    renderClassified();
+  }catch(e){ console.error(e); }
+}
+function renderClassified(){
+  const q = ($("classifiedSearch").value || "").toLowerCase();
+  const rows = allClassified.filter(r => (r.display_name || "").toLowerCase().includes(q));
+  $("classifiedBody").innerHTML = rows.map(r => `
+    <tr><td>${r.display_name}</td><td>${r.city}</td><td>${r.score_text}</td><td><span class="badge success">${r.status}</span></td></tr>
+  `).join("");
+}
+
+async function identify(){
+  const cpf = onlyDigits($("cpfInput").value);
+  if(cpf.length !== 11) return alert("Informe um CPF válido com 11 números.");
+  try{
+    const data = await api("/identify", {method:"POST", body:JSON.stringify({cpf})});
+    hideFlow();
+
+    if(data.already_classified){
+      $("alreadyText").textContent = `${data.participant.name}, você já está classificado neste ciclo com ${data.score_text}. Agora é só torcer!`;
+      state.participant = data.participant;
+      $("alreadyClassifiedSection").classList.remove("hidden");
+      return;
+    }
+
+    if(data.exists){
+      state.participant = data.participant;
+      $("knownTitle").textContent = `Olá, ${data.participant.name.split(" ")[0]}!`;
+      $("knownData").textContent = `Encontramos seu cadastro: ${data.participant.city} — WhatsApp ${formatPhone(data.participant.whatsapp)}.`;
+      $("knownSection").classList.remove("hidden");
+    } else {
+      state.participant = {cpf};
+      $("registerSection").classList.remove("hidden");
+    }
+  }catch(e){ alert(e.message); }
+}
+
+async function register(){
+  const payload = {
+    cpf: onlyDigits($("cpfInput").value),
+    name: $("nameInput").value.trim(),
+    whatsapp: onlyDigits($("whatsappInput").value),
+    city: $("cityInput").value.trim(),
+    is_18_confirmed: $("acceptInput").checked,
+    regulation_accepted: $("acceptInput").checked
+  };
+  if(!payload.name || payload.whatsapp.length < 10 || !payload.city || !payload.regulation_accepted){
+    return alert("Preencha todos os campos e aceite o regulamento.");
+  }
+  try{
+    const data = await api("/register", {method:"POST", body:JSON.stringify(payload)});
+    state.participant = data.participant;
+    await startAttempt();
+  }catch(e){ alert(e.message); }
+}
+
+async function startAttempt(){
+  if(!state.activeCycle) return alert("Nenhum ciclo ativo.");
+  if(!state.participant?.id) return alert("Participante não identificado.");
+  try{
+    const data = await api("/start-attempt", {
+      method:"POST",
+      body:JSON.stringify({cycle_id: state.activeCycle.id, participant_id: state.participant.id})
+    });
+    state.attempt = data.attempt;
+    state.questions = data.questions;
+    state.currentIndex = 0;
+    hideFlow();
+    $("quizSection").classList.remove("hidden");
+    renderQuestion();
+    window.scrollTo({top:$("quizSection").offsetTop - 20, behavior:"smooth"});
+  }catch(e){ alert(e.message); }
+}
+
+function renderQuestion(){
+  const q = state.questions[state.currentIndex];
+  state.selectedOption = null;
+  $("nextQuestionBtn").disabled = true;
+  $("questionCounter").textContent = `Pergunta ${state.currentIndex + 1} de ${state.questions.length}`;
+  $("progressBar").style.width = `${((state.currentIndex + 1) / state.questions.length) * 100}%`;
+  $("questionText").textContent = q.question_text;
+  $("optionsWrap").innerHTML = ["A","B","C","D"].map(letter => `
+    <div class="option" data-option="${letter}">
+      <strong>${letter}</strong>
+      <span>${q.options[letter]}</span>
+    </div>
+  `).join("");
+  document.querySelectorAll(".option").forEach(el => {
+    el.addEventListener("click", () => {
+      document.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
+      el.classList.add("selected");
+      state.selectedOption = el.dataset.option;
+      $("nextQuestionBtn").disabled = false;
+    });
+  });
+  $("nextQuestionBtn").textContent = state.currentIndex === state.questions.length - 1 ? "Finalizar quiz" : "Avançar";
+}
+
+async function nextQuestion(){
+  const q = state.questions[state.currentIndex];
+  if(!state.selectedOption) return;
+  try{
+    await api("/answer", {
+      method:"POST",
+      body:JSON.stringify({
+        attempt_id: state.attempt.id,
+        question_id: q.id,
+        selected_option: state.selectedOption
+      })
+    });
+    if(state.currentIndex < state.questions.length - 1){
+      state.currentIndex++;
+      renderQuestion();
+    } else {
+      await finishAttempt();
+    }
+  }catch(e){ alert(e.message); }
+}
+
+async function finishAttempt(){
+  try{
+    const data = await api("/finish-attempt", {
+      method:"POST",
+      body:JSON.stringify({attempt_id: state.attempt.id})
+    });
+    hideFlow();
+    $("resultSection").classList.remove("hidden");
+    if(data.is_classified){
+      $("resultTitle").textContent = "Parabéns, você está classificado!";
+      $("resultText").textContent = `Você acertou ${data.correct_answers} de ${data.total_questions} perguntas e entrou para a lista do sorteio deste ciclo.`;
+      $("resultActions").innerHTML = `
+        <a class="btn gold" href="${state.activeCycle?.prize?.partner_instagram_url || "#"}" target="_blank">Seguir parceiro</a>
+        <a class="btn secondary" href="${state.activeCycle?.settings?.hn_instagram_url || "https://www.instagram.com/hnnoticias/"}" target="_blank">Seguir HN Notícias</a>
+        <a class="btn" href="#classificados">Ver classificados</a>
+      `;
+    } else {
+      $("resultTitle").textContent = "Não foi dessa vez!";
+      $("resultText").textContent = `Você acertou ${data.correct_answers} de ${data.total_questions}. Para classificar, precisa acertar pelo menos ${data.minimum_correct_answers}.`;
+      $("resultActions").innerHTML = `<button class="btn" id="tryAgainBtn">Tentar novamente</button><a class="btn secondary" href="#ranking">Ver ranking</a>`;
+      setTimeout(() => $("tryAgainBtn").addEventListener("click", startAttempt), 0);
+    }
+    await loadRanking();
+    await loadClassified();
+    window.scrollTo({top:$("resultSection").offsetTop - 20, behavior:"smooth"});
+  }catch(e){ alert(e.message); }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  $("cpfInput").addEventListener("input", e => e.target.value = formatCPF(e.target.value));
+  $("whatsappInput").addEventListener("input", e => e.target.value = formatPhone(e.target.value));
+  $("startBtn").addEventListener("click", () => { hideFlow(); $("identifySection").classList.remove("hidden"); window.scrollTo({top:$("identifySection").offsetTop - 20, behavior:"smooth"}); });
+  $("identifyBtn").addEventListener("click", identify);
+  $("registerBtn").addEventListener("click", register);
+  $("startAttemptKnownBtn").addEventListener("click", startAttempt);
+  $("nextQuestionBtn").addEventListener("click", nextQuestion);
+  $("reloadRankingBtn").addEventListener("click", loadRanking);
+  $("classifiedSearch").addEventListener("input", renderClassified);
+  await loadActiveCycle();
+  await loadRanking();
+  await loadClassified();
+});
