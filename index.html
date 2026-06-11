@@ -18,13 +18,23 @@
           <div class="kicker">Central da Copa HN</div>
           <h1>Craque da Copa HN</h1>
           <p class="lead">
-            Responda ao quiz da Copa, teste seus conhecimentos e concorra ao prêmio do ciclo atual.
+            O quiz acompanha a jornada do Brasil na Copa. A cada ciclo, ligado aos jogos da Seleção,
+            entram novas perguntas, novo ranking e uma nova premiação.
+          </p>
+          <p class="lead lead-small">
+            Neste ciclo, responda às perguntas, acerte pelo menos 11 de 20 e entre na lista de classificados
+            para o sorteio do prêmio.
           </p>
 
           <div class="simple-rules">
             <div><strong>20</strong><span>perguntas</span></div>
             <div><strong>11</strong><span>acertos para classificar</span></div>
             <div><strong>+1</strong><span>nova chance se não classificar</span></div>
+          </div>
+
+          <div class="cycle-explain">
+            <strong>Como funcionam os ciclos?</strong>
+            <span>Os ciclos mudam conforme os jogos do Brasil. Quando um ciclo encerra, geramos a lista de classificados para o sorteio e abrimos uma nova etapa com novas perguntas.</span>
           </div>
 
           <div class="cycle-mini">
@@ -50,16 +60,24 @@
 
       <section id="identifySection" class="card hidden" style="margin-top:24px">
         <div class="section-title"><h2>Identificação</h2></div>
+        <p class="lead lead-small">
+          Informe seu CPF para começarmos. Ele será usado apenas para identificar sua participação,
+          evitar duplicidade entre os classificados e liberar novas tentativas caso você ainda não tenha alcançado a pontuação mínima.
+        </p>
         <div class="form" style="max-width:520px">
           <label>CPF</label>
           <input class="input" id="cpfInput" placeholder="___.___.___-__" inputmode="numeric" autocomplete="off">
           <button class="btn" id="identifyBtn">Continuar</button>
-          <p class="meta">Usamos o CPF apenas para controlar sua participação no ciclo.</p>
+          <p class="meta">Se você já participou antes, o sistema reconhece seu cadastro pelo CPF.</p>
         </div>
       </section>
 
       <section id="registerSection" class="card hidden" style="margin-top:24px">
         <div class="section-title"><h2>Complete seu cadastro</h2></div>
+        <p class="lead lead-small">
+          Esse cadastro é feito apenas na primeira participação. Se você não classificar, poderá tentar novamente
+          usando o mesmo CPF, sem preencher tudo de novo. Se classificar, seu CPF fica bloqueado para novas tentativas neste ciclo.
+        </p>
         <div class="form" style="max-width:620px">
           <label>Nome completo</label>
           <input class="input" id="nameInput">
