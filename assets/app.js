@@ -58,10 +58,12 @@ async function loadActiveCycle(){
     $("cyclePeriod").textContent = c ? `${fmtDate(c.start_at)} a ${fmtDate(c.end_at)}` : "";
     $("prizeName").textContent = c?.prize?.prize_name || "Prêmio do ciclo a definir";
     $("prizeDescription").textContent = c?.prize?.prize_description || "O prêmio deste ciclo será divulgado em breve.";
-    $("partnerName").textContent = c?.prize?.partner_name || "Parceiro da semana";
-    $("partnerBtn").textContent = c?.prize?.partner_button_text || "Seguir parceiro";
-    $("partnerBtn").href = c?.prize?.partner_instagram_url || "#";
-    $("hnBtn").href = c?.settings?.hn_instagram_url || "https://www.instagram.com/hnnoticias/";
+    if ($("partnerName")) $("partnerName").textContent = c?.prize?.partner_name || "Parceiro da semana";
+    if ($("partnerBtn")) {
+      $("partnerBtn").textContent = c?.prize?.partner_button_text || "Seguir parceiro";
+      $("partnerBtn").href = c?.prize?.partner_instagram_url || "#";
+    }
+    if ($("hnBtn")) $("hnBtn").href = c?.settings?.hn_instagram_url || "https://www.instagram.com/hnnoticias/";
     setPartnerLinks();
 
     if(!c){
@@ -255,6 +257,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("nextQuestionBtn").addEventListener("click", nextQuestion);
   $("reloadRankingBtn").addEventListener("click", loadRanking);
   $("classifiedSearch").addEventListener("input", renderClassified);
+  if ($("showRankingBtn")) {
+    $("showRankingBtn").addEventListener("click", async () => {
+      $("ranking").classList.remove("hidden");
+      await loadRanking();
+      window.scrollTo({top:$("ranking").offsetTop - 20, behavior:"smooth"});
+    });
+  }
+  if ($("showClassifiedBtn")) {
+    $("showClassifiedBtn").addEventListener("click", async () => {
+      $("classificados").classList.remove("hidden");
+      await loadClassified();
+      window.scrollTo({top:$("classificados").offsetTop - 20, behavior:"smooth"});
+    });
+  }
   await loadActiveCycle();
   await loadRanking();
   await loadClassified();

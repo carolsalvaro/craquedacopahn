@@ -8,52 +8,44 @@
 </head>
 <body>
   <div class="container">
-    <header class="header">
+    <header class="header simple-header">
       <a href="/"><img src="/assets/Logo_limpa.png" class="logo" alt="HN Notícias"></a>
-      <nav class="nav">
-        <a href="#ranking">Ranking</a>
-        <a href="#classificados">Classificados</a>
-        <a href="#historico">Ciclos anteriores</a>
-        <a href="/admin.html">Admin</a>
-      </nav>
     </header>
 
     <main id="app">
-      <section class="hero">
-        <div class="card">
+      <section class="hero-simple">
+        <div class="card hero-card">
           <div class="kicker">Central da Copa HN</div>
           <h1>Craque da Copa HN</h1>
           <p class="lead">
-            Teste seus conhecimentos sobre Copa do Mundo, acompanhe a jornada do Brasil
-            e participe do sorteio do ciclo atual.
+            Responda ao quiz da Copa, teste seus conhecimentos e concorra ao prêmio do ciclo atual.
           </p>
 
-          <div class="rules">
-            <div class="rule">20 perguntas</div>
-            <div class="rule">11 acertos para classificar</div>
-            <div class="rule">Pode tentar de novo se não classificar</div>
-            <div class="rule">Ranking público</div>
+          <div class="simple-rules">
+            <div><strong>20</strong><span>perguntas</span></div>
+            <div><strong>11</strong><span>acertos para classificar</span></div>
+            <div><strong>+1</strong><span>nova chance se não classificar</span></div>
           </div>
 
-          <div class="actions">
-            <button class="btn" id="startBtn">Começar quiz</button>
-            <a class="btn secondary" href="#ranking">Ver ranking</a>
+          <div class="cycle-mini">
+            <span class="badge gold">Ciclo atual</span>
+            <h2 id="cycleTitle">Carregando...</h2>
+            <p class="meta" id="cyclePeriod"></p>
+            <p><strong id="prizeName">Prêmio do ciclo</strong></p>
+            <p id="prizeDescription" class="meta"></p>
           </div>
+
+          <div class="actions main-actions">
+            <button class="btn big" id="startBtn">Começar quiz</button>
+          </div>
+
+          <div class="secondary-links">
+            <button class="link-button" id="showRankingBtn">Ver ranking</button>
+            <button class="link-button" id="showClassifiedBtn">Ver classificados</button>
+          </div>
+
           <div id="homeNotice" class="toast hidden"></div>
         </div>
-
-        <aside class="card prize-card">
-          <div class="kicker">Ciclo atual</div>
-          <h2 id="cycleTitle">Carregando...</h2>
-          <p class="meta" id="cyclePeriod"></p>
-          <div class="prize-name" id="prizeName">Prêmio do ciclo</div>
-          <p id="prizeDescription" class="lead" style="font-size:16px"></p>
-          <p class="meta">Parceiro: <strong id="partnerName">Parceiro da semana</strong></p>
-          <div class="actions">
-            <a class="btn gold" id="partnerBtn" target="_blank" rel="noopener">Seguir parceiro</a>
-            <a class="btn secondary" id="hnBtn" target="_blank" rel="noopener">Seguir HN Notícias</a>
-          </div>
-        </aside>
       </section>
 
       <section id="identifySection" class="card hidden" style="margin-top:24px">
@@ -118,7 +110,7 @@
         <div class="actions" id="resultActions"></div>
       </section>
 
-      <section id="ranking" style="margin-top:34px">
+      <section id="ranking" class="hidden" style="margin-top:34px">
         <div class="section-title">
           <h2>Top 20 do ciclo</h2>
           <button class="btn secondary" id="reloadRankingBtn">Atualizar</button>
@@ -132,7 +124,7 @@
         </div>
       </section>
 
-      <section id="classificados" style="margin-top:34px">
+      <section id="classificados" class="hidden" style="margin-top:34px">
         <div class="section-title">
           <h2>Lista completa de classificados</h2>
           <input class="input" id="classifiedSearch" placeholder="Buscar nome..." style="max-width:280px">
@@ -145,7 +137,7 @@
         </div>
       </section>
 
-      <section id="historico" style="margin-top:34px">
+      <section id="historico" class="hidden" style="margin-top:34px">
         <div class="section-title"><h2>Ciclos anteriores</h2></div>
         <div class="card">
           <p class="lead">Os ciclos encerrados aparecerão aqui, com ranking, classificados e vencedor.</p>
@@ -156,6 +148,8 @@
 
     <footer class="footer">
       Craque da Copa HN — HN Notícias
+      <br>
+      <a href="/admin.html" style="color:inherit;text-decoration:none;opacity:.55">Admin</a>
     </footer>
   </div>
 
