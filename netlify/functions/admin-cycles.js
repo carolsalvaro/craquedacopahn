@@ -7,12 +7,50 @@ exports.handler = async (event) => {
     const supabase = getSupabase();
 
     if (event.httpMethod === "GET") {
-      const { data, error } = await supabase
-        .from("v_cycle_summary")
-        .select("*")
-        .order("stage_order", { ascending: true, nullsFirst: false });
+      const { data: cycles, error } = await supabase
+        .from("quiz_cycles")
+        .select("*, prize:quiz_cycle_prizes(*)")
+        .order("stage_order", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: true });
       if (error) throw error;
-      return ok({ cycles: data || [] });
+
+      const { data: summaries, error: sError } = await supabase
+        .from("v_cycle_summary")
+        .select("*");
+      if (sError) throw sError;
+
+      const summaryMap = new Map((summaries || []).map(s => [s.cycle_id, s]));
+      const formatted = (cycles || []).map(c => {
+        const prize = Array.isArray(c.prize) ? c.prize[0] : c.prize;
+        const s = summaryMap.get(c.id) || {};
+        return {
+          cycle_id: c.id,
+          title: c.title,
+          slug: c.slug,
+          stage: c.stage,
+          stage_label: c.stage_label,
+          stage_order: c.stage_order,
+          is_brazil_dependent: c.is_brazil_dependent,
+          start_at: c.start_at,
+          end_at: c.end_at,
+          draw_at: c.draw_at,
+          status: c.status,
+          questions_per_attempt: c.questions_per_attempt,
+          minimum_correct_answers: c.minimum_correct_answers,
+          public_notes: c.public_notes,
+          prize_name: prize?.prize_name || null,
+          prize_description: prize?.prize_description || null,
+          partner_name: prize?.partner_name || null,
+          partner_instagram_url: prize?.partner_instagram_url || null,
+          partner_button_text: prize?.partner_button_text || null,
+          unique_participants: s.unique_participants || 0,
+          total_attempts: s.total_attempts || 0,
+          classified_participants: s.classified_participants || 0,
+          average_correct_answers: s.average_correct_answers || null
+        };
+      });
+
+      return ok({ cycles: formatted });
     }
 
     if (event.httpMethod === "POST") {
@@ -30,11 +68,13 @@ exports.handler = async (event) => {
         minimum_correct_answers: 11
       };
 
-      const { data: cycle, error: cError } = await supabase
-        .from("quiz_cycles")
-        .upsert(cyclePayload, { onConflict: "slug" })
-        .select("*")
-        .single();
+      let cycleQuery;
+      if (b.id) {
+        cycleQuery = supabase.from("quiz_cycles").update(cyclePayload).eq("id", b.id).select("*").single();
+      } else {
+        cycleQuery = supabase.from("quiz_cycles").upsert(cyclePayload, { onConflict: "slug" }).select("*").single();
+      }
+      const { data: cycle, error: cError } = await cycleQuery;
       if (cError) throw cError;
 
       const { error: pError } = await supabase

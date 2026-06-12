@@ -251,3 +251,44 @@ label{font-weight:850;color:#2d3850;font-size:14px}
     max-width:360px;
   }
 }
+
+/* Destaque mais forte para alternativa selecionada no quiz */
+.option.selected{
+  background:linear-gradient(135deg, var(--blue), var(--blue-2));
+  color:#fff;
+  border-color:var(--blue-2);
+  box-shadow:0 12px 26px rgba(16,79,158,.28);
+  transform:translateY(-1px);
+}
+.option.selected strong{
+  background:rgba(255,255,255,.18);
+  color:#fff;
+  border:1px solid rgba(255,255,255,.28);
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.option.selected span{color:#fff}
+.option.selected::after{
+  content:"Selecionada";
+  margin-left:auto;
+  font-size:12px;
+  font-weight:950;
+  background:rgba(255,255,255,.18);
+  color:#fff;
+  padding:6px 9px;
+  border-radius:999px;
+}
+.actions-inline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn.small{padding:8px 11px;font-size:12px;border-radius:10px;box-shadow:none}
+.btn.muted{background:#eef3fb;color:var(--blue-2);border:1px solid #dce6f4;box-shadow:none}
+.admin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.admin-form-grid .full{grid-column:1 / -1}
+.table td.actions-cell{min-width:150px}
+@media(max-width:860px){
+  .admin-form-grid{grid-template-columns:1fr}
+  .option.selected::after{display:none}
+}

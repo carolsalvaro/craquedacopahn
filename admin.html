@@ -10,9 +10,7 @@
   <div class="container">
     <header class="header">
       <a href="/"><img src="/assets/Logo_limpa.png" class="logo" alt="HN Notícias"></a>
-      <nav class="nav">
-        <a href="/">Ver site</a>
-      </nav>
+      <nav class="nav"><a href="/">Ver site</a></nav>
     </header>
 
     <section id="loginBox" class="card" style="max-width:520px;margin:30px auto">
@@ -30,6 +28,7 @@
         <a href="#" class="admin-nav active" data-tab="dashboard">Dashboard</a>
         <a href="#" class="admin-nav" data-tab="cycles">Ciclos</a>
         <a href="#" class="admin-nav" data-tab="questions">Perguntas</a>
+        <a href="#" class="admin-nav" data-tab="participants">Participações</a>
         <a href="#" class="admin-nav" data-tab="classified">Classificados/Urna</a>
         <a href="#" class="admin-nav" data-tab="winner">Vencedor</a>
         <a href="#" id="logoutBtn">Sair</a>
@@ -52,99 +51,86 @@
         <div class="admin-tab hidden" id="tab-cycles">
           <div class="section-title"><h2>Gerenciar ciclos</h2></div>
           <div class="card">
-            <h3>Novo/editar ciclo</h3>
-            <div class="form">
+            <h3 id="cycleFormTitle">Novo ciclo</h3>
+            <p class="meta">Crie ou edite ciclos, datas, status, prêmio e parceiro. Ao ativar um ciclo, os outros ficam inativos automaticamente.</p>
+            <div class="form admin-form-grid">
               <input type="hidden" id="cycleId">
-              <label>Título do ciclo</label>
-              <input class="input" id="cycleTitleInput" placeholder="Ciclo 1 — Estreia do Brasil">
-              <label>Slug</label>
-              <input class="input" id="cycleSlugInput" placeholder="ciclo-1-estreia-do-brasil">
-              <label>Fase</label>
-              <select id="cycleStageInput">
-                <option value="group_stage">Fase de grupos</option>
-                <option value="round_of_16">Oitavas</option>
-                <option value="quarter_final">Quartas</option>
-                <option value="semi_final">Semifinal</option>
-                <option value="final">Final</option>
-                <option value="special">Especial</option>
-              </select>
-              <label>Início</label>
-              <input class="input" id="cycleStartInput" type="datetime-local">
-              <label>Encerramento</label>
-              <input class="input" id="cycleEndInput" type="datetime-local">
-              <label>Sorteio</label>
-              <input class="input" id="cycleDrawInput" type="datetime-local">
-              <label>Status</label>
-              <select id="cycleStatusInput">
-                <option value="draft">Rascunho</option>
-                <option value="scheduled">Agendado</option>
-                <option value="active">Ativo</option>
-                <option value="closed">Encerrado</option>
-                <option value="draw_pending">Aguardando sorteio</option>
-                <option value="winner_registered">Vencedor registrado</option>
-                <option value="published">Publicado</option>
-                <option value="cancelled">Cancelado</option>
-              </select>
-              <label>Nome do prêmio</label>
-              <input class="input" id="prizeNameInput" placeholder="Prêmio do ciclo a definir">
-              <label>Descrição do prêmio</label>
-              <textarea id="prizeDescriptionInput" rows="3"></textarea>
-              <label>Nome do parceiro</label>
-              <input class="input" id="partnerNameInput" placeholder="Parceiro da semana">
-              <label>Instagram/link do parceiro</label>
-              <input class="input" id="partnerUrlInput" placeholder="https://instagram.com/...">
-              <label>Texto do botão do parceiro</label>
-              <input class="input" id="partnerButtonInput" placeholder="Seguir parceiro da semana">
-              <button class="btn" id="saveCycleBtn">Salvar ciclo</button>
+              <div class="full"><label>Título do ciclo</label><input class="input" id="cycleTitleInput" placeholder="Ciclo 1 — Estreia do Brasil"></div>
+              <div><label>Slug</label><input class="input" id="cycleSlugInput" placeholder="ciclo-1-estreia-do-brasil"></div>
+              <div><label>Fase</label><select id="cycleStageInput"><option value="group_stage">Fase de grupos</option><option value="round_of_16">Oitavas</option><option value="quarter_final">Quartas</option><option value="semi_final">Semifinal</option><option value="final">Final</option><option value="special">Especial</option></select></div>
+              <div><label>Início</label><input class="input" id="cycleStartInput" type="datetime-local"></div>
+              <div><label>Encerramento</label><input class="input" id="cycleEndInput" type="datetime-local"></div>
+              <div><label>Sorteio</label><input class="input" id="cycleDrawInput" type="datetime-local"></div>
+              <div><label>Status</label><select id="cycleStatusInput"><option value="draft">Rascunho</option><option value="scheduled">Agendado</option><option value="active">Ativo</option><option value="closed">Encerrado</option><option value="draw_pending">Aguardando sorteio</option><option value="winner_registered">Vencedor registrado</option><option value="published">Publicado</option><option value="cancelled">Cancelado</option></select></div>
+              <div><label>Nome do prêmio</label><input class="input" id="prizeNameInput" placeholder="Prêmio do ciclo a definir"></div>
+              <div><label>Nome do parceiro</label><input class="input" id="partnerNameInput" placeholder="Parceiro da semana"></div>
+              <div class="full"><label>Descrição do prêmio</label><textarea id="prizeDescriptionInput" rows="3"></textarea></div>
+              <div><label>Instagram/link do parceiro</label><input class="input" id="partnerUrlInput" placeholder="https://instagram.com/..."></div>
+              <div><label>Texto do botão do parceiro</label><input class="input" id="partnerButtonInput" placeholder="Seguir parceiro da semana"></div>
+              <div class="full actions-inline"><button class="btn" id="saveCycleBtn">Salvar ciclo</button><button class="btn muted" id="newCycleBtn" type="button">Limpar / novo ciclo</button></div>
             </div>
+          </div>
+          <div class="card table-card" style="margin-top:18px">
+            <table class="table">
+              <thead><tr><th>Ciclo</th><th>Status</th><th>Período</th><th>Prêmio</th><th>Ações</th></tr></thead>
+              <tbody id="cyclesEditBody"></tbody>
+            </table>
           </div>
         </div>
 
         <div class="admin-tab hidden" id="tab-questions">
           <div class="section-title"><h2>Gerenciar perguntas</h2></div>
           <div class="card">
-            <h3>Nova pergunta</h3>
+            <h3 id="questionFormTitle">Nova pergunta</h3>
+            <p class="meta">Cadastre ou edite perguntas. A coluna Ciclo mostra onde ela está vinculada.</p>
             <div class="form">
-              <label>Enunciado</label>
-              <textarea id="questionTextInput" rows="3"></textarea>
+              <input type="hidden" id="questionIdInput">
+              <label>Enunciado</label><textarea id="questionTextInput" rows="3"></textarea>
               <label>Alternativa A</label><input class="input" id="optionAInput">
               <label>Alternativa B</label><input class="input" id="optionBInput">
               <label>Alternativa C</label><input class="input" id="optionCInput">
               <label>Alternativa D</label><input class="input" id="optionDInput">
-              <label>Correta</label>
-              <select id="correctInput"><option>A</option><option>B</option><option>C</option><option>D</option></select>
+              <label>Correta</label><select id="correctInput"><option>A</option><option>B</option><option>C</option><option>D</option></select>
               <label>Categoria</label><input class="input" id="categoryInput" placeholder="Brasil em Copas">
-              <label>Dificuldade</label>
-              <select id="difficultyInput"><option value="easy">Fácil</option><option value="medium">Média</option><option value="hard">Difícil</option></select>
+              <label>Dificuldade</label><select id="difficultyInput"><option value="easy">Fácil</option><option value="medium">Média</option><option value="hard">Difícil</option></select>
               <label>Vincular ao ciclo</label><select id="questionCycleInput"></select>
-              <button class="btn" id="saveQuestionBtn">Salvar pergunta</button>
+              <div class="actions-inline"><button class="btn" id="saveQuestionBtn">Salvar pergunta</button><button class="btn muted" id="newQuestionBtn" type="button">Limpar / nova pergunta</button></div>
             </div>
           </div>
-
           <div class="card table-card" style="margin-top:18px">
             <table class="table">
-              <thead><tr><th>Pergunta</th><th>Nível</th><th>Acertos</th><th>Erros</th><th>Taxa</th></tr></thead>
+              <thead><tr><th>Pergunta</th><th>Ciclo</th><th>Nível</th><th>Acertos</th><th>Erros</th><th>Taxa</th><th>Ações</th></tr></thead>
               <tbody id="questionsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-tab hidden" id="tab-participants">
+          <div class="section-title"><h2>Participações / participantes</h2><button class="btn secondary" id="reloadParticipantsBtn">Atualizar</button></div>
+          <div class="card">
+            <h3>Editar participante</h3>
+            <p class="meta">Ajuste dados simples de cadastro, como nome, WhatsApp e cidade.</p>
+            <div class="form admin-form-grid">
+              <input type="hidden" id="participantIdInput">
+              <div><label>Nome completo</label><input class="input" id="participantNameInput"></div>
+              <div><label>CPF</label><input class="input" id="participantCpfInput" disabled></div>
+              <div><label>WhatsApp</label><input class="input" id="participantWhatsappInput"></div>
+              <div><label>Cidade</label><input class="input" id="participantCityInput"></div>
+              <div class="full actions-inline"><button class="btn" id="saveParticipantBtn">Salvar participante</button><button class="btn muted" id="clearParticipantBtn" type="button">Limpar</button></div>
+            </div>
+          </div>
+          <div class="card table-card" style="margin-top:18px">
+            <table class="table">
+              <thead><tr><th>Nome</th><th>CPF</th><th>WhatsApp</th><th>Cidade</th><th>Tentativas</th><th>Classificado</th><th>Ações</th></tr></thead>
+              <tbody id="participantsBody"></tbody>
             </table>
           </div>
         </div>
 
         <div class="admin-tab hidden" id="tab-classified">
           <div class="section-title"><h2>Classificados e urna</h2></div>
-          <div class="card">
-            <label>Selecionar ciclo</label>
-            <select id="classifiedCycleInput"></select>
-            <div class="actions">
-              <button class="btn secondary" id="loadClassifiedBtn">Carregar classificados</button>
-              <button class="btn gold" id="printRaffleBtn">Imprimir papéis da urna</button>
-            </div>
-          </div>
-          <div class="card table-card" style="margin-top:18px">
-            <table class="table">
-              <thead><tr><th>Nome</th><th>CPF final</th><th>WhatsApp</th><th>Cidade</th><th>Pontuação</th></tr></thead>
-              <tbody id="adminClassifiedBody"></tbody>
-            </table>
-          </div>
+          <div class="card"><label>Selecionar ciclo</label><select id="classifiedCycleInput"></select><div class="actions"><button class="btn secondary" id="loadClassifiedBtn">Carregar classificados</button><button class="btn gold" id="printRaffleBtn">Imprimir papéis da urna</button></div></div>
+          <div class="card table-card" style="margin-top:18px"><table class="table"><thead><tr><th>Nome</th><th>CPF final</th><th>WhatsApp</th><th>Cidade</th><th>Pontuação</th></tr></thead><tbody id="adminClassifiedBody"></tbody></table></div>
         </div>
 
         <div class="admin-tab hidden" id="tab-winner">
@@ -153,14 +139,7 @@
             <label>Ciclo</label><select id="winnerCycleInput"></select>
             <label>Participante classificado</label><select id="winnerParticipantInput"></select>
             <label>Data do sorteio</label><input class="input" type="date" id="winnerDateInput">
-            <label>Status</label>
-            <select id="winnerStatusInput">
-              <option value="pending_validation">Aguardando validação</option>
-              <option value="validated">Validado</option>
-              <option value="delivered">Entregue</option>
-              <option value="disqualified">Desclassificado</option>
-              <option value="redrawn">Sorteado novamente</option>
-            </select>
+            <label>Status</label><select id="winnerStatusInput"><option value="pending_validation">Aguardando validação</option><option value="validated">Validado</option><option value="delivered">Entregue</option><option value="disqualified">Desclassificado</option><option value="redrawn">Sorteado novamente</option></select>
             <label>Observações</label><textarea id="winnerNotesInput" rows="3"></textarea>
             <button class="btn" id="saveWinnerBtn">Registrar vencedor</button>
           </div>
@@ -168,7 +147,6 @@
       </section>
     </main>
   </div>
-
   <script src="/assets/admin.js"></script>
 </body>
 </html>
