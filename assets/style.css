@@ -394,3 +394,48 @@ label{font-weight:850;color:#2d3850;font-size:14px}
 }
 
 button[disabled]{opacity:.62;cursor:not-allowed;transform:none!important;}
+
+
+/* Ajuste de logo da home: somente dentro do box, sem contorno e box mais alto */
+.container{
+  padding-top:12px;
+}
+.hero-simple{
+  margin-top:0;
+}
+.simple-header{
+  display:none;
+}
+.hero-card{
+  margin-top:0;
+  padding-top:28px;
+}
+.hero-card:before{
+  display:none!important;
+  content:none!important;
+}
+.hero-logo{
+  height:148px;
+  max-width:560px;
+  width:auto;
+  margin:0 auto 10px;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  filter:none!important;
+  border-radius:0!important;
+  padding:0!important;
+}
+@media(max-width:700px){
+  .container{
+    padding-top:10px;
+  }
+  .hero-card{
+    padding-top:24px;
+  }
+  .hero-logo{
+    height:118px;
+    max-width:100%;
+    margin-bottom:8px;
+  }
+}
