@@ -87,12 +87,56 @@ async function saveQuestion(){
 async function loadParticipants(){
   if(!$("participantsBody")) return;
   const data=await api("/admin-participants"); participantsCache=data.participants||[];
-  $("participantsBody").innerHTML=participantsCache.map(p=>`<tr><td>${p.name}</td><td>${formatCPF(p.cpf)}</td><td>${formatPhone(p.whatsapp)}</td><td>${p.city}</td><td>${p.total_attempts||0}</td><td>${p.has_classified?'<span class="badge success">Sim</span>':'<span class="badge">Não</span>'}</td><td class="actions-cell"><button class="btn small muted edit-participant-btn" data-id="${p.id}">Editar</button></td></tr>`).join("");
+  $("participantsBody").innerHTML=participantsCache.map(p=>`<tr><td>${p.name}</td><td>${formatCPF(p.cpf)}</td><td>${formatPhone(p.whatsapp)}</td><td>${p.city}</td><td>${p.total_attempts||0}</td><td>${p.has_classified?'<span class="badge success">Sim</span>':'<span class="badge">Não</span>'}</td><td class="actions-cell"><button class="btn small muted edit-participant-btn" data-id="${p.id}">Editar</button><button class="btn small" data-participant-answers="${p.id}">Ver respostas</button></td></tr>`).join("");
   document.querySelectorAll(".edit-participant-btn").forEach(btn=>btn.addEventListener("click",()=>editParticipant(btn.dataset.id)));
+  document.querySelectorAll("[data-participant-answers]").forEach(btn=>btn.addEventListener("click",()=>loadParticipantAnswers(btn.dataset.participantAnswers).catch(e=>alert(e.message))));
 }
 function clearParticipantForm(){ $("participantIdInput").value=""; ["participantNameInput","participantCpfInput","participantWhatsappInput","participantCityInput"].forEach(id=>$(id).value=""); }
 function editParticipant(id){ const p=participantsCache.find(x=>x.id===id); if(!p) return; $("participantIdInput").value=p.id; $("participantNameInput").value=p.name||""; $("participantCpfInput").value=formatCPF(p.cpf); $("participantWhatsappInput").value=formatPhone(p.whatsapp); $("participantCityInput").value=p.city||""; window.scrollTo({top:$("tab-participants").offsetTop-20,behavior:"smooth"}); }
 async function saveParticipant(){ const payload={id:$("participantIdInput").value,name:$("participantNameInput").value.trim(),whatsapp:onlyDigits($("participantWhatsappInput").value),city:$("participantCityInput").value.trim()}; if(!payload.id) return alert("Clique em editar em um participante primeiro."); if(!payload.name||!payload.whatsapp||!payload.city) return alert("Preencha nome, WhatsApp e cidade."); await api("/admin-participants",{method:"POST",body:JSON.stringify(payload)}); show("Participante atualizado."); clearParticipantForm(); await loadParticipants(); }
+
+
+function answerStatusBadge(isCorrect){
+  return isCorrect ? '<span class="badge success">Acertou</span>' : '<span class="badge">Errou</span>';
+}
+function formatAttemptDate(iso){
+  if(!iso) return "Em andamento";
+  return new Date(iso).toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"});
+}
+async function loadParticipantAnswers(participantId){
+  const data = await api(`/admin-participant-answers?participant_id=${encodeURIComponent(participantId)}`);
+  const p = data.participant || {};
+  const attempts = data.attempts || [];
+  $("participantAnswersCard").classList.remove("hidden");
+  $("participantAnswersTitle").textContent = `Respostas de ${p.name || "participante"}`;
+  if(!attempts.length){
+    $("participantAnswersWrap").innerHTML = `<p class="meta">Este participante ainda não tem tentativas registradas.</p>`;
+    return;
+  }
+  $("participantAnswersWrap").innerHTML = attempts.map(a => `
+    <div class="card" style="box-shadow:none;margin:14px 0;border-color:#dfe8f6">
+      <strong>${a.cycle_title || "Ciclo"}</strong>
+      <p class="meta">${formatAttemptDate(a.finished_at || a.started_at)} — ${a.correct_answers || 0}/${a.total_questions || 0} acertos — ${a.is_classified ? "Classificado" : "Não classificado"}</p>
+      <div class="table-card" style="margin-top:10px">
+        <table class="table">
+          <thead><tr><th>#</th><th>Pergunta</th><th>Resposta marcada</th><th>Correta</th><th>Status</th></tr></thead>
+          <tbody>
+            ${(a.answers || []).map(ans => `
+              <tr>
+                <td>${ans.position}</td>
+                <td>${ans.question_text}</td>
+                <td>${ans.selected_option || "-"}) ${ans.selected_text || ""}</td>
+                <td>${ans.correct_option || "-"}) ${ans.correct_text || ""}</td>
+                <td>${answerStatusBadge(ans.is_correct)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `).join("");
+  window.scrollTo({top:$("participantAnswersCard").offsetTop - 20, behavior:"smooth"});
+}
 
 async function loadClassifiedAdmin(){ const cycleId=$("classifiedCycleInput").value; const data=await api(`/admin-classified?cycle_id=${encodeURIComponent(cycleId)}`); classifiedCache=data.items||[]; $("adminClassifiedBody").innerHTML=classifiedCache.map(r=>`<tr><td>${r.name}</td><td>${r.cpf_last_digits}</td><td>${r.whatsapp}</td><td>${r.city}</td><td>${r.score_text}</td></tr>`).join(""); $("winnerParticipantInput").innerHTML=classifiedCache.map(r=>`<option value="${r.participant_id}" data-attempt="${r.attempt_id}">${r.name} — ${r.score_text}</option>`).join(""); }
 function printRaffle(){ const html=classifiedCache.map(r=>`<div style="border:1px dashed #333;padding:14px;margin:10px;width:280px;display:inline-block;font-family:Arial"><strong>${r.name}</strong><br>${r.city}<br>CPF final: ${r.cpf_last_digits}<br>Pontuação: ${r.score_text}</div>`).join(""); const w=window.open("","_blank"); w.document.write(`<html><head><title>Urna</title></head><body>${html}</body></html>`); w.document.close(); w.print(); }
@@ -105,7 +149,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("reloadAdminBtn").addEventListener("click",()=>loadAdmin().catch(e=>alert(e.message)));
   $("saveCycleBtn").addEventListener("click",()=>saveCycle().catch(e=>alert(e.message))); $("newCycleBtn").addEventListener("click",clearCycleForm);
   $("saveQuestionBtn").addEventListener("click",()=>saveQuestion().catch(e=>alert(e.message))); $("newQuestionBtn").addEventListener("click",clearQuestionForm);
-  $("reloadParticipantsBtn").addEventListener("click",()=>loadParticipants().catch(e=>alert(e.message))); $("saveParticipantBtn").addEventListener("click",()=>saveParticipant().catch(e=>alert(e.message))); $("clearParticipantBtn").addEventListener("click",clearParticipantForm); $("participantWhatsappInput").addEventListener("input",e=>e.target.value=formatPhone(e.target.value));
+  $("reloadParticipantsBtn").addEventListener("click",()=>loadParticipants().catch(e=>alert(e.message))); $("saveParticipantBtn").addEventListener("click",()=>saveParticipant().catch(e=>alert(e.message))); $("clearParticipantBtn").addEventListener("click",clearParticipantForm); $("participantWhatsappInput").addEventListener("input",e=>e.target.value=formatPhone(e.target.value)); if($("closeParticipantAnswersBtn")) $("closeParticipantAnswersBtn").addEventListener("click",()=>$("participantAnswersCard").classList.add("hidden"));
   $("loadClassifiedBtn").addEventListener("click",()=>loadClassifiedAdmin().catch(e=>alert(e.message))); $("printRaffleBtn").addEventListener("click",printRaffle);
   $("winnerCycleInput").addEventListener("change",()=>{ $("classifiedCycleInput").value=$("winnerCycleInput").value; loadClassifiedAdmin().catch(()=>{}); }); $("saveWinnerBtn").addEventListener("click",()=>saveWinner().catch(e=>alert(e.message)));
   requireLogin();
