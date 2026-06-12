@@ -105,10 +105,15 @@ exports.handler = async (event) => {
       question_id: q.id,
       position: idx + 1
     }));
-    const { error: aqError } = await supabase
+    const { data: insertedAttemptQuestions, error: aqError } = await supabase
       .from("quiz_attempt_questions")
-      .insert(attemptQuestions);
+      .insert(attemptQuestions)
+      .select("id,question_id,position");
     if (aqError) throw aqError;
+
+    const attemptQuestionMap = new Map(
+      (insertedAttemptQuestions || []).map(row => [`${row.question_id}-${row.position}`, row.id])
+    );
 
     // Atualiza uso de perguntas.
     for (const q of selected) {
@@ -138,8 +143,9 @@ exports.handler = async (event) => {
 
     return ok({
       attempt: { id: attempt.id },
-      questions: selected.map(q => ({
+      questions: selected.map((q, idx) => ({
         id: q.id,
+        attempt_question_id: attemptQuestionMap.get(`${q.id}-${idx + 1}`) || null,
         question_text: q.question_text,
         options: {
           A: q.option_a,

@@ -5,7 +5,9 @@ const state = {
   attempt: null,
   questions: [],
   currentIndex: 0,
-  selectedOption: null
+  selectedOption: null,
+  answers: {},
+  savedAnswers: {}
 };
 
 const $ = (id) => document.getElementById(id);
@@ -184,6 +186,9 @@ async function startAttempt(){
     state.attempt = data.attempt;
     state.questions = data.questions;
     state.currentIndex = 0;
+    state.selectedOption = null;
+    state.answers = {};
+    state.savedAnswers = {};
     hideFlow();
     $("quizSection").classList.remove("hidden");
     renderQuestion();
@@ -191,15 +196,20 @@ async function startAttempt(){
   }catch(e){ alert(e.message); }
 }
 
+function answerKeyFor(q){
+  return q.attempt_question_id || q.id;
+}
+
 function renderQuestion(){
   const q = state.questions[state.currentIndex];
-  state.selectedOption = null;
-  $("nextQuestionBtn").disabled = true;
+  const key = answerKeyFor(q);
+  state.selectedOption = state.answers[key] || null;
+  $("nextQuestionBtn").disabled = !state.selectedOption;
   $("questionCounter").textContent = `Pergunta ${state.currentIndex + 1} de ${state.questions.length}`;
   $("progressBar").style.width = `${((state.currentIndex + 1) / state.questions.length) * 100}%`;
   $("questionText").textContent = q.question_text;
   $("optionsWrap").innerHTML = ["A","B","C","D"].map(letter => `
-    <div class="option" data-option="${letter}">
+    <div class="option ${state.selectedOption === letter ? "selected" : ""}" data-option="${letter}">
       <strong>${letter}</strong>
       <span>${q.options[letter]}</span>
     </div>
@@ -209,31 +219,61 @@ function renderQuestion(){
       document.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
       el.classList.add("selected");
       state.selectedOption = el.dataset.option;
+      state.answers[key] = state.selectedOption;
       $("nextQuestionBtn").disabled = false;
     });
   });
   $("nextQuestionBtn").textContent = state.currentIndex === state.questions.length - 1 ? "Finalizar quiz" : "Avançar";
 }
 
-async function nextQuestion(){
+async function saveCurrentAnswer(){
   const q = state.questions[state.currentIndex];
+  const key = answerKeyFor(q);
+  const selected = state.selectedOption || state.answers[key];
+  if(!selected) return false;
+
+  // Se a mesma resposta já foi registrada, não precisa gravar novamente.
+  if(state.savedAnswers[key] === selected) return true;
+
+  await api("/answer", {
+    method:"POST",
+    body:JSON.stringify({
+      attempt_id: state.attempt.id,
+      attempt_question_id: q.attempt_question_id || null,
+      question_id: q.id,
+      selected_option: selected
+    })
+  });
+  state.savedAnswers[key] = selected;
+  return true;
+}
+
+async function nextQuestion(){
   if(!state.selectedOption) return;
+  const btn = $("nextQuestionBtn");
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = state.currentIndex === state.questions.length - 1 ? "Salvando e finalizando..." : "Salvando...";
+
   try{
-    await api("/answer", {
-      method:"POST",
-      body:JSON.stringify({
-        attempt_id: state.attempt.id,
-        question_id: q.id,
-        selected_option: state.selectedOption
-      })
-    });
+    const saved = await saveCurrentAnswer();
+    if(!saved){
+      btn.disabled = false;
+      btn.textContent = originalText;
+      return;
+    }
+
     if(state.currentIndex < state.questions.length - 1){
       state.currentIndex++;
       renderQuestion();
     } else {
       await finishAttempt();
     }
-  }catch(e){ alert(e.message); }
+  }catch(e){
+    alert(e.message);
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 }
 
 function renderAnswerReview(answers){
@@ -280,6 +320,7 @@ async function finishAttempt(){
       $("resultText").textContent = `Você acertou ${data.correct_answers} de ${data.total_questions} perguntas e já está na lista de classificados deste ciclo. Agora é só aguardar o sorteio junto com os demais acertadores. ${drawDateText()}`;
       $("resultActions").innerHTML = `
         <button class="btn" type="button" data-show-section="ranking">Ver ranking</button>
+        <button class="btn secondary" type="button" data-show-section="classificados">Ver classificados</button>
         <a class="btn secondary" href="${hnUrl}" target="_blank" rel="noopener">Seguir HN Notícias</a>
         <a class="btn gold" href="${partnerUrl}" target="_blank" rel="noopener">${partnerText}</a>
       `;
@@ -289,6 +330,7 @@ async function finishAttempt(){
       $("resultActions").innerHTML = `
         <button class="btn big result-primary-action" id="tryAgainBtn" type="button">Participar novamente</button>
         <button class="btn" type="button" data-show-section="ranking">Ver ranking</button>
+        <button class="btn secondary" type="button" data-show-section="classificados">Ver classificados</button>
         <a class="btn secondary" href="${hnUrl}" target="_blank" rel="noopener">Seguir HN Notícias</a>
         <a class="btn gold" href="${partnerUrl}" target="_blank" rel="noopener">${partnerText}</a>
       `;

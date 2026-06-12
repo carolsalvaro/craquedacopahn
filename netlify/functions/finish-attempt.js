@@ -28,7 +28,10 @@ exports.handler = async (event) => {
     if (ansError) throw ansError;
 
     if ((answers || []).length !== attempt.total_questions) return bad("Tentativa incompleta.");
-    if ((answers || []).some(a => !a.selected_option)) return bad("Responda todas as perguntas antes de finalizar.");
+    const missingAnswers = (answers || []).filter(a => !a.selected_option);
+    if (missingAnswers.length) {
+      return bad(`Ainda faltou registrar ${missingAnswers.length} resposta${missingAnswers.length > 1 ? "s" : ""}. Selecione a alternativa e clique novamente em finalizar.`);
+    }
 
     const correct = answers.filter(a => a.is_correct === true).length;
     const wrong = answers.length - correct;

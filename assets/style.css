@@ -392,3 +392,5 @@ label{font-weight:850;color:#2d3850;font-size:14px}
   .hero-logo{height:104px;max-width:100%;}
   .answer-head{align-items:flex-start;flex-direction:column;}
 }
+
+button[disabled]{opacity:.62;cursor:not-allowed;transform:none!important;}
