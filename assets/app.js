@@ -241,6 +241,7 @@ async function saveCurrentAnswer(){
       attempt_id: state.attempt.id,
       attempt_question_id: q.attempt_question_id || null,
       question_id: q.id,
+      position: q.position || (state.currentIndex + 1),
       selected_option: selected
     })
   });
@@ -252,28 +253,38 @@ async function nextQuestion(){
   if(!state.selectedOption) return;
   const btn = $("nextQuestionBtn");
   const originalText = btn.textContent;
+  const isLast = state.currentIndex === state.questions.length - 1;
   btn.disabled = true;
-  btn.textContent = state.currentIndex === state.questions.length - 1 ? "Salvando e finalizando..." : "Salvando...";
+  btn.textContent = isLast ? "Salvando e finalizando..." : "Salvando...";
 
   try{
     const saved = await saveCurrentAnswer();
-    if(!saved){
-      btn.disabled = false;
-      btn.textContent = originalText;
+    if(!saved) throw new Error("Selecione uma alternativa antes de avançar.");
+
+    if(!isLast){
+      state.currentIndex++;
+      renderQuestion();
       return;
     }
 
-    if(state.currentIndex < state.questions.length - 1){
-      state.currentIndex++;
-      renderQuestion();
-    } else {
-      await finishAttempt();
-    }
+    await finishAttempt();
   }catch(e){
-    alert(e.message);
+    alert(e.message || "Não foi possível salvar/finalizar. Tente novamente.");
     btn.disabled = false;
     btn.textContent = originalText;
   }
+}
+
+function buildAnswersPayload(){
+  return state.questions.map((q, idx) => {
+    const key = answerKeyFor(q);
+    return {
+      attempt_question_id: q.attempt_question_id || null,
+      question_id: q.id,
+      position: q.position || (idx + 1),
+      selected_option: state.answers[key] || null
+    };
+  });
 }
 
 function renderAnswerReview(answers){
@@ -302,44 +313,46 @@ function renderAnswerReview(answers){
 }
 
 async function finishAttempt(){
-  try{
-    const data = await api("/finish-attempt", {
-      method:"POST",
-      body:JSON.stringify({attempt_id: state.attempt.id})
-    });
-    hideFlow();
-    $("resultSection").classList.remove("hidden");
-    renderAnswerReview(data.answers || []);
+  const data = await api("/finish-attempt", {
+    method:"POST",
+    body:JSON.stringify({
+      attempt_id: state.attempt.id,
+      answers: buildAnswersPayload()
+    })
+  });
 
-    const partnerUrl = state.activeCycle?.prize?.partner_instagram_url || "#";
-    const partnerText = state.activeCycle?.prize?.partner_button_text || "Seguir parceiro";
-    const hnUrl = state.activeCycle?.settings?.hn_instagram_url || "https://www.instagram.com/hnnoticias/";
+  hideFlow();
+  $("resultSection").classList.remove("hidden");
+  renderAnswerReview(data.answers || []);
 
-    if(data.is_classified){
-      $("resultTitle").textContent = "Parabéns, você está classificado!";
-      $("resultText").textContent = `Você acertou ${data.correct_answers} de ${data.total_questions} perguntas e já está na lista de classificados deste ciclo. Agora é só aguardar o sorteio junto com os demais acertadores. ${drawDateText()}`;
-      $("resultActions").innerHTML = `
-        <button class="btn" type="button" data-show-section="ranking">Ver ranking</button>
-        <button class="btn secondary" type="button" data-show-section="classificados">Ver classificados</button>
-        <a class="btn secondary" href="${hnUrl}" target="_blank" rel="noopener">Seguir HN Notícias</a>
-        <a class="btn gold" href="${partnerUrl}" target="_blank" rel="noopener">${partnerText}</a>
-      `;
-    } else {
-      $("resultTitle").textContent = "Não foi dessa vez, mas você pode tentar de novo!";
-      $("resultText").textContent = `Você acertou ${data.correct_answers} de ${data.total_questions}. Para entrar na lista de classificados, precisa acertar pelo menos ${data.minimum_correct_answers}. Como você ainda não classificou neste ciclo, pode participar novamente com novas perguntas.`;
-      $("resultActions").innerHTML = `
-        <button class="btn big result-primary-action" id="tryAgainBtn" type="button">Participar novamente</button>
-        <button class="btn" type="button" data-show-section="ranking">Ver ranking</button>
-        <button class="btn secondary" type="button" data-show-section="classificados">Ver classificados</button>
-        <a class="btn secondary" href="${hnUrl}" target="_blank" rel="noopener">Seguir HN Notícias</a>
-        <a class="btn gold" href="${partnerUrl}" target="_blank" rel="noopener">${partnerText}</a>
-      `;
-      setTimeout(() => $("tryAgainBtn")?.addEventListener("click", startAttempt), 0);
-    }
-    await loadRanking();
-    await loadClassified();
-    window.scrollTo({top:$("resultSection").offsetTop - 20, behavior:"smooth"});
-  }catch(e){ alert(e.message); }
+  const partnerUrl = state.activeCycle?.prize?.partner_instagram_url || "#";
+  const partnerText = state.activeCycle?.prize?.partner_button_text || "Seguir parceiro";
+  const hnUrl = state.activeCycle?.settings?.hn_instagram_url || "https://www.instagram.com/hnnoticias/";
+
+  if(data.is_classified){
+    $("resultTitle").textContent = "Parabéns, você está classificado!";
+    $("resultText").textContent = `Você acertou ${data.correct_answers} de ${data.total_questions} perguntas e já está na lista de classificados deste ciclo. Agora é só aguardar o sorteio junto com os demais acertadores. ${drawDateText()}`;
+    $("resultActions").innerHTML = `
+      <button class="btn" type="button" data-show-section="ranking">Ver ranking</button>
+      <button class="btn secondary" type="button" data-show-section="classificados">Ver classificados</button>
+      <a class="btn secondary" href="${hnUrl}" target="_blank" rel="noopener">Seguir HN Notícias</a>
+      <a class="btn gold" href="${partnerUrl}" target="_blank" rel="noopener">${partnerText}</a>
+    `;
+  } else {
+    $("resultTitle").textContent = "Não foi dessa vez, mas você pode tentar de novo!";
+    $("resultText").textContent = `Você acertou ${data.correct_answers} de ${data.total_questions}. Para entrar na lista de classificados, precisa acertar pelo menos ${data.minimum_correct_answers}. Como você ainda não classificou neste ciclo, pode participar novamente com novas perguntas.`;
+    $("resultActions").innerHTML = `
+      <button class="btn big result-primary-action" id="tryAgainBtn" type="button">Participar novamente</button>
+      <button class="btn" type="button" data-show-section="ranking">Ver ranking</button>
+      <button class="btn secondary" type="button" data-show-section="classificados">Ver classificados</button>
+      <a class="btn secondary" href="${hnUrl}" target="_blank" rel="noopener">Seguir HN Notícias</a>
+      <a class="btn gold" href="${partnerUrl}" target="_blank" rel="noopener">${partnerText}</a>
+    `;
+    setTimeout(() => $("tryAgainBtn")?.addEventListener("click", startAttempt), 0);
+  }
+  await loadRanking();
+  await loadClassified();
+  window.scrollTo({top:$("resultSection").offsetTop - 20, behavior:"smooth"});
 }
 
 document.addEventListener("DOMContentLoaded", async () => {

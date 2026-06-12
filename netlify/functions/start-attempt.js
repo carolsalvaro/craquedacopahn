@@ -145,6 +145,7 @@ exports.handler = async (event) => {
       attempt: { id: attempt.id },
       questions: selected.map((q, idx) => ({
         id: q.id,
+        position: idx + 1,
         attempt_question_id: attemptQuestionMap.get(`${q.id}-${idx + 1}`) || null,
         question_text: q.question_text,
         options: {
