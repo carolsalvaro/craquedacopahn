@@ -566,3 +566,27 @@ body{
 .btn.share-btn:hover{
   filter:brightness(.96);
 }
+
+
+/* Ajuste visual da coluna Ciclo na tabela de perguntas */
+.cycle-pill{
+  display:inline-flex;
+  align-items:center;
+  padding:6px 9px;
+  margin:2px 4px 2px 0;
+  border-radius:999px;
+  background:#eef5ff;
+  border:1px solid #d6e5f8;
+  color:var(--blue-2);
+  font-size:12px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.badge.warning{
+  background:#fff3cd;
+  color:#7a5500;
+  border-color:#ffe2a4;
+}
+.table td:nth-child(2){
+  max-width:210px;
+}

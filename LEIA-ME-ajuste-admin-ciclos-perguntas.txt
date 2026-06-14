@@ -1,0 +1,12 @@
+Ajuste visual da tabela de perguntas
+
+Esse patch corrige a coluna "Ciclo" na tela de perguntas do admin.
+Como as perguntas foram vinculadas aos 5 ciclos da Rede Vale, o admin estava listando:
+Ciclo 1, Ciclo 2, Ciclo 3, Ciclo 4, Ciclo 5
+
+Agora, quando a pergunta estiver vinculada aos 5 ciclos, aparece apenas:
+"Todos os 5 ciclos"
+
+Arquivos para substituir:
+- assets/admin.js
+- assets/style.css

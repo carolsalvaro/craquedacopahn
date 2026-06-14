@@ -19,6 +19,21 @@ async function api(path, options = {}){
 function show(msg){ const n=$("adminNotice"); n.textContent=msg; n.classList.remove("hidden"); setTimeout(()=>n.classList.add("hidden"),4500); }
 function onlyDigits(v){ return String(v || "").replace(/\D/g, ""); }
 function formatCPF(v){ v=onlyDigits(v).slice(0,11); return v.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2"); }
+
+function formatQuestionCycles(text){
+  const raw = String(text || "").trim();
+  if(!raw || raw === "Sem ciclo vinculado") return '<span class="badge warning">Sem ciclo</span>';
+
+  const parts = raw.split(",").map(x => x.trim()).filter(Boolean);
+  const unique = [...new Set(parts)];
+
+  const valeCycles = unique.filter(x => /^Ciclo [1-5] — Rede Vale$/.test(x));
+  if(valeCycles.length >= 5) return '<span class="badge success">Todos os 5 ciclos</span>';
+  if(valeCycles.length > 1) return `<span class="badge success">${valeCycles.length} ciclos Rede Vale</span>`;
+
+  return unique.map(x => `<span class="cycle-pill">${x}</span>`).join(" ");
+}
+
 function formatPhone(v){ v=onlyDigits(v).slice(0,11); if(v.length<=10) return v.replace(/(\d{2})(\d)/,"($1) $2").replace(/(\d{4})(\d)/,"$1-$2"); return v.replace(/(\d{2})(\d)/,"($1) $2").replace(/(\d{5})(\d)/,"$1-$2"); }
 function toLocalInput(iso){ if(!iso) return ""; const d=new Date(iso); const pad=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
 function periodText(c){ const a=c.start_at?new Date(c.start_at).toLocaleDateString("pt-BR"):"A definir"; const b=c.end_at?new Date(c.end_at).toLocaleDateString("pt-BR"):"A definir"; return `${a} a ${b}`; }
