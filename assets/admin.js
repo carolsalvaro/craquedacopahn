@@ -46,7 +46,7 @@ async function loadCycles(){
 }
 function clearCycleForm(){
   $("cycleId").value=""; $("cycleFormTitle").textContent="Novo ciclo";
-  ["cycleTitleInput","cycleSlugInput","cycleStartInput","cycleEndInput","cycleDrawInput","prizeNameInput","prizeDescriptionInput","partnerNameInput","partnerUrlInput","partnerButtonInput"].forEach(id=>$(id).value="");
+  ["cycleTitleInput","cycleSlugInput","cycleStartInput","cycleEndInput","cycleDrawInput","prizeNameInput","prizeDescriptionInput","cycleNotesInput","partnerNameInput","partnerUrlInput","partnerButtonInput"].forEach(id=>$(id).value=""); if($("questionsPerAttemptInput")) $("questionsPerAttemptInput").value="10"; if($("minimumCorrectInput")) $("minimumCorrectInput").value="6";
   $("cycleStageInput").value="group_stage"; $("cycleStatusInput").value="draft";
 }
 function editCycle(id){
@@ -54,12 +54,12 @@ function editCycle(id){
   $("cycleFormTitle").textContent="Editar ciclo"; $("cycleId").value=c.cycle_id;
   $("cycleTitleInput").value=c.title||""; $("cycleSlugInput").value=c.slug||""; $("cycleStageInput").value=c.stage||"special";
   $("cycleStartInput").value=toLocalInput(c.start_at); $("cycleEndInput").value=toLocalInput(c.end_at); $("cycleDrawInput").value=toLocalInput(c.draw_at);
-  $("cycleStatusInput").value=c.status||"draft"; $("prizeNameInput").value=c.prize_name||""; $("prizeDescriptionInput").value=c.prize_description||"";
+  $("cycleStatusInput").value=c.status||"draft"; if($("questionsPerAttemptInput")) $("questionsPerAttemptInput").value=c.questions_per_attempt||10; if($("minimumCorrectInput")) $("minimumCorrectInput").value=c.minimum_correct_answers||6; $("prizeNameInput").value=c.prize_name||""; $("prizeDescriptionInput").value=c.prize_description||""; if($("cycleNotesInput")) $("cycleNotesInput").value=c.public_notes||"";
   $("partnerNameInput").value=c.partner_name||""; $("partnerUrlInput").value=c.partner_instagram_url||""; $("partnerButtonInput").value=c.partner_button_text||"";
   window.scrollTo({top:$("tab-cycles").offsetTop-20,behavior:"smooth"});
 }
 async function saveCycle(){
-  const payload={id:$("cycleId").value||null,title:$("cycleTitleInput").value.trim(),slug:$("cycleSlugInput").value.trim(),stage:$("cycleStageInput").value,start_at:$("cycleStartInput").value||null,end_at:$("cycleEndInput").value||null,draw_at:$("cycleDrawInput").value||null,status:$("cycleStatusInput").value,prize_name:$("prizeNameInput").value.trim(),prize_description:$("prizeDescriptionInput").value.trim(),partner_name:$("partnerNameInput").value.trim(),partner_instagram_url:$("partnerUrlInput").value.trim(),partner_button_text:$("partnerButtonInput").value.trim()};
+  const payload={id:$("cycleId").value||null,title:$("cycleTitleInput").value.trim(),slug:$("cycleSlugInput").value.trim(),stage:$("cycleStageInput").value,start_at:$("cycleStartInput").value||null,end_at:$("cycleEndInput").value||null,draw_at:$("cycleDrawInput").value||null,status:$("cycleStatusInput").value,prize_name:$("prizeNameInput").value.trim(),prize_description:$("prizeDescriptionInput").value.trim(),public_notes: $("cycleNotesInput") ? $("cycleNotesInput").value.trim() : "", questions_per_attempt: Number($("questionsPerAttemptInput")?.value || 10), minimum_correct_answers: Number($("minimumCorrectInput")?.value || 6), partner_name:$("partnerNameInput").value.trim(),partner_instagram_url:$("partnerUrlInput").value.trim(),partner_button_text:$("partnerButtonInput").value.trim()};
   if(!payload.title||!payload.slug) return alert("Informe título e slug.");
   await api("/admin-cycles",{method:"POST",body:JSON.stringify(payload)}); show("Ciclo salvo."); clearCycleForm(); await loadCycles();
 }

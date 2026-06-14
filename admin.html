@@ -62,9 +62,12 @@
               <div><label>Encerramento</label><input class="input" id="cycleEndInput" type="datetime-local"></div>
               <div><label>Sorteio</label><input class="input" id="cycleDrawInput" type="datetime-local"></div>
               <div><label>Status</label><select id="cycleStatusInput"><option value="draft">Rascunho</option><option value="scheduled">Agendado</option><option value="active">Ativo</option><option value="closed">Encerrado</option><option value="draw_pending">Aguardando sorteio</option><option value="winner_registered">Vencedor registrado</option><option value="published">Publicado</option><option value="cancelled">Cancelado</option></select></div>
+              <div><label>Perguntas por tentativa</label><input class="input" id="questionsPerAttemptInput" type="number" min="1" max="50" value="10"></div>
+              <div><label>Acertos para classificar</label><input class="input" id="minimumCorrectInput" type="number" min="1" max="50" value="6"></div>
               <div><label>Nome do prêmio</label><input class="input" id="prizeNameInput" placeholder="Prêmio do ciclo a definir"></div>
               <div><label>Nome do parceiro</label><input class="input" id="partnerNameInput" placeholder="Parceiro da semana"></div>
               <div class="full"><label>Descrição do prêmio</label><textarea id="prizeDescriptionInput" rows="3"></textarea></div>
+              <div class="full"><label>Regra/validação do ciclo</label><textarea id="cycleNotesInput" rows="3" placeholder="Ex.: Para validar a classificação, seguir Rede Vale e HN Notícias no Instagram."></textarea></div>
               <div><label>Instagram/link do parceiro</label><input class="input" id="partnerUrlInput" placeholder="https://instagram.com/..."></div>
               <div><label>Texto do botão do parceiro</label><input class="input" id="partnerButtonInput" placeholder="Seguir parceiro da semana"></div>
               <div class="full actions-inline"><button class="btn" id="saveCycleBtn">Salvar ciclo</button><button class="btn muted" id="newCycleBtn" type="button">Limpar / novo ciclo</button></div>

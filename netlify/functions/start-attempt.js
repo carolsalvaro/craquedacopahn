@@ -66,10 +66,15 @@ exports.handler = async (event) => {
 
     const usageMap = new Map((usageRows || []).map(u => [u.question_id, u]));
 
+    const totalToPick = Number(cycle.questions_per_attempt || 10);
+    const easyQty = Math.max(1, Math.round(totalToPick * 0.4));
+    const mediumQty = Math.max(1, Math.round(totalToPick * 0.4));
+    const hardQty = Math.max(0, totalToPick - easyQty - mediumQty);
+
     let selected = [
-      ...pickByDifficulty(questions, "easy", 8, usageMap),
-      ...pickByDifficulty(questions, "medium", 8, usageMap),
-      ...pickByDifficulty(questions, "hard", 4, usageMap)
+      ...pickByDifficulty(questions, "easy", easyQty, usageMap),
+      ...pickByDifficulty(questions, "medium", mediumQty, usageMap),
+      ...pickByDifficulty(questions, "hard", hardQty, usageMap)
     ];
 
     // Se faltar alguma dificuldade, completa com qualquer pergunta menos usada.
@@ -83,17 +88,17 @@ exports.handler = async (event) => {
           if (ua !== ub) return ua - ub;
           return Math.random() - 0.5;
         });
-      selected = [...selected, ...remaining.slice(0, cycle.questions_per_attempt - selected.length)];
+      selected = [...selected, ...remaining.slice(0, totalToPick - selected.length)];
     }
 
-    selected = shuffle(selected).slice(0, cycle.questions_per_attempt);
+    selected = shuffle(selected).slice(0, totalToPick);
 
     const { data: attempt, error: attemptError } = await supabase
       .from("quiz_attempts")
       .insert({
         cycle_id,
         participant_id,
-        total_questions: cycle.questions_per_attempt,
+        total_questions: totalToPick,
         status: "in_progress"
       })
       .select("*")

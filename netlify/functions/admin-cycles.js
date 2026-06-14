@@ -64,8 +64,9 @@ exports.handler = async (event) => {
         end_at: b.end_at || null,
         draw_at: b.draw_at || null,
         status: b.status || "draft",
-        questions_per_attempt: 20,
-        minimum_correct_answers: 11
+        questions_per_attempt: Number(b.questions_per_attempt || 10),
+        minimum_correct_answers: Number(b.minimum_correct_answers || 6),
+        public_notes: b.public_notes || null
       };
 
       let cycleQuery;

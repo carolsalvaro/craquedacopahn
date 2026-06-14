@@ -31,6 +31,29 @@ function drawDateText(){
   if(!iso) return "A data do sorteio será divulgada pelo HN Notícias.";
   return `O sorteio está previsto para ${fmtDate(iso)}.`;
 }
+function activeQuestionTotal(){
+  return state.activeCycle?.questions_per_attempt || 10;
+}
+function activeMinimumCorrect(){
+  return state.activeCycle?.minimum_correct_answers || 6;
+}
+function cycleValidationText(){
+  return state.activeCycle?.public_notes || "As exigências do ciclo serão informadas pela organização e poderão incluir seguir a Rede Vale e o HN Notícias no Instagram, estar em um grupo de notícias do HN ou ter baixado o aplicativo de descontos da Rede Vale.";
+}
+function updateDynamicRules(){
+  const total = activeQuestionTotal();
+  const minimum = activeMinimumCorrect();
+  const fields = {
+    questionTotalText: total,
+    questionTotalCard: total,
+    minCorrectText: minimum,
+    minCorrectCard: minimum,
+    rulesTotalQuestions: `${total} perguntas`,
+    rulesMinimumCorrect: `${minimum} perguntas`
+  };
+  Object.entries(fields).forEach(([id, value]) => { if($(id)) $(id).textContent = value; });
+  if($("cycleValidationRule")) $("cycleValidationRule").textContent = cycleValidationText();
+}
 async function api(path, options = {}){
   const res = await fetch(API + path, {
     headers: {"Content-Type":"application/json", ...(options.headers || {})},
@@ -56,6 +79,11 @@ function setPartnerLinks(){
   document.querySelectorAll(".hn-link").forEach(a => a.href = hnUrl);
 }
 async function showPublicSection(section){
+  if(section === "regras"){
+    $("regras").classList.remove("hidden");
+    updateDynamicRules();
+    window.scrollTo({top:$("regras").offsetTop - 20, behavior:"smooth"});
+  }
   if(section === "ranking"){
     $("ranking").classList.remove("hidden");
     await loadRanking();
@@ -77,6 +105,7 @@ async function loadActiveCycle(){
     $("cyclePeriod").textContent = c ? `${fmtDate(c.start_at)} a ${fmtDate(c.end_at)}` : "";
     $("prizeName").textContent = c?.prize?.prize_name || "Prêmio do ciclo a definir";
     $("prizeDescription").textContent = c?.prize?.prize_description || "O prêmio deste ciclo será divulgado em breve.";
+    updateDynamicRules();
     if ($("partnerName")) $("partnerName").textContent = c?.prize?.partner_name || "Parceiro da semana";
     if ($("partnerBtn")) {
       $("partnerBtn").textContent = c?.prize?.partner_button_text || "Seguir parceiro";
@@ -326,17 +355,18 @@ async function finishAttempt(){
   renderAnswerReview(data.answers || []);
 
   const partnerUrl = state.activeCycle?.prize?.partner_instagram_url || "#";
-  const partnerText = state.activeCycle?.prize?.partner_button_text || "Seguir parceiro";
+  const partnerText = state.activeCycle?.prize?.partner_button_text || "Seguir Rede Vale";
   const hnUrl = state.activeCycle?.settings?.hn_instagram_url || "https://www.instagram.com/hnnoticias/";
 
   if(data.is_classified){
     $("resultTitle").textContent = "Parabéns, você está classificado!";
-    $("resultText").textContent = `Você acertou ${data.correct_answers} de ${data.total_questions} perguntas e já está na lista de classificados deste ciclo. Agora é só aguardar o sorteio junto com os demais acertadores. ${drawDateText()}`;
+    $("resultText").textContent = `Você acertou ${data.correct_answers} de ${data.total_questions} perguntas e já está na lista de classificados deste ciclo. Agora é só aguardar o sorteio junto com os demais acertadores. ${drawDateText()} A validação das regras do ciclo poderá ser conferida antes da entrega do prêmio.`;
     $("resultActions").innerHTML = `
       <button class="btn" type="button" data-show-section="ranking">Ver ranking</button>
       <button class="btn secondary" type="button" data-show-section="classificados">Ver classificados</button>
       <a class="btn secondary" href="${hnUrl}" target="_blank" rel="noopener">Seguir HN Notícias</a>
       <a class="btn gold" href="${partnerUrl}" target="_blank" rel="noopener">${partnerText}</a>
+      <a class="btn secondary" href="https://w.app/bze3ol" target="_blank" rel="noopener">Suporte</a>
     `;
   } else {
     $("resultTitle").textContent = "Não foi dessa vez, mas você pode tentar de novo!";
@@ -347,6 +377,7 @@ async function finishAttempt(){
       <button class="btn secondary" type="button" data-show-section="classificados">Ver classificados</button>
       <a class="btn secondary" href="${hnUrl}" target="_blank" rel="noopener">Seguir HN Notícias</a>
       <a class="btn gold" href="${partnerUrl}" target="_blank" rel="noopener">${partnerText}</a>
+      <a class="btn secondary" href="https://w.app/bze3ol" target="_blank" rel="noopener">Suporte</a>
     `;
     setTimeout(() => $("tryAgainBtn")?.addEventListener("click", startAttempt), 0);
   }
@@ -359,6 +390,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("cpfInput").addEventListener("input", e => e.target.value = formatCPF(e.target.value));
   $("whatsappInput").addEventListener("input", e => e.target.value = formatPhone(e.target.value));
   $("startBtn").addEventListener("click", () => { hideFlow(); $("identifySection").classList.remove("hidden"); window.scrollTo({top:$("identifySection").offsetTop - 20, behavior:"smooth"}); });
+  if($("rulesStartBtn")) $("rulesStartBtn").addEventListener("click", () => { hideFlow(); $("identifySection").classList.remove("hidden"); window.scrollTo({top:$("identifySection").offsetTop - 20, behavior:"smooth"}); });
   $("identifyBtn").addEventListener("click", identify);
   $("registerBtn").addEventListener("click", register);
   $("startAttemptKnownBtn").addEventListener("click", startAttempt);

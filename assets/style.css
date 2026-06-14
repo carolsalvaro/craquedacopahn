@@ -439,3 +439,89 @@ button[disabled]{opacity:.62;cursor:not-allowed;transform:none!important;}
     margin-bottom:8px;
   }
 }
+
+
+/* Ajustes Rede Vale */
+body{
+  padding-bottom:132px;
+}
+.main-actions{
+  justify-content:center;
+}
+.rules-content ul{
+  margin:10px 0 0;
+  padding-left:22px;
+  color:var(--muted);
+  font-weight:700;
+  line-height:1.5;
+}
+.rules-content li{
+  margin:7px 0;
+}
+.rules-content h3{
+  color:var(--blue-2);
+  margin:0 0 6px;
+}
+.rules-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+  margin:18px 0;
+}
+.rules-grid > div{
+  background:#f8fbff;
+  border:1px solid #dfe8f6;
+  border-radius:18px;
+  padding:18px;
+}
+.rules-highlight{
+  background:#fffaf0;
+  border-color:rgba(197,155,67,.35);
+}
+.support-float{
+  position:fixed;
+  right:18px;
+  bottom:114px;
+  z-index:60;
+  background:#0f9d58;
+  color:#fff;
+  text-decoration:none;
+  font-weight:950;
+  padding:12px 16px;
+  border-radius:999px;
+  box-shadow:0 14px 28px rgba(0,0,0,.22);
+}
+.rede-vale-fixed-banner{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:55;
+  background:#063f27;
+  border-top:3px solid #d1a844;
+  box-shadow:0 -10px 25px rgba(0,0,0,.18);
+}
+.rede-vale-fixed-banner img{
+  display:block;
+  width:100%;
+  max-height:112px;
+  object-fit:cover;
+  object-position:center;
+}
+@media(max-width:700px){
+  body{
+    padding-bottom:104px;
+  }
+  .rules-grid{
+    grid-template-columns:1fr;
+  }
+  .support-float{
+    right:12px;
+    bottom:88px;
+    padding:10px 13px;
+    font-size:13px;
+  }
+  .rede-vale-fixed-banner img{
+    max-height:82px;
+  }
+}

@@ -12,20 +12,20 @@
       <section class="hero-simple">
         <div class="card hero-card">
           <img src="/assets/Logo_limpa.png" class="hero-logo" alt="HN Notícias">
-          <div class="kicker">Central da Copa HN Notícias</div>
-          <h1>Craque da Copa HN Notícias + Rede de Postos Vale </h1>
+          <div class="kicker">Central da Copa HN</div>
+          <h1>Craque da Copa HN</h1>
           <p class="lead">
-            O quiz acompanha a jornada do Brasil na Copa. A cada ciclo, ligado aos jogos da Seleção,
-            entram novas perguntas, novo ranking e uma nova premiação.
+            O quiz acompanha os ciclos da promoção da Rede Vale com o HN Notícias.
+            A cada ciclo, novas participações formam a lista de classificados para o sorteio.
           </p>
           <p class="lead lead-small">
-            Neste ciclo, responda às perguntas, acerte pelo menos 11 de 20 e entre na lista de classificados
-            para o sorteio do prêmio.
+            Neste ciclo, responda às perguntas, acerte pelo menos <strong id="minCorrectText">6</strong> de <strong id="questionTotalText">10</strong>
+            e entre na urna do sorteio de um tanque de combustível.
           </p>
 
           <div class="simple-rules">
-            <div><strong>20</strong><span>perguntas</span></div>
-            <div><strong>11</strong><span>acertos para classificar</span></div>
+            <div><strong id="questionTotalCard">10</strong><span>perguntas</span></div>
+            <div><strong id="minCorrectCard">6</strong><span>acertos para classificar</span></div>
             <div><strong>+1</strong><span>nova chance se não classificar</span></div>
           </div>
 
@@ -44,9 +44,57 @@
 
           <div class="actions main-actions">
             <button class="btn big" id="startBtn">Começar quiz</button>
+            <button class="btn secondary" type="button" data-show-section="regras">Ver regras</button>
           </div>
 
           <div id="homeNotice" class="toast hidden"></div>
+        </div>
+      </section>
+
+
+      <section id="regras" class="card hidden" style="margin-top:24px">
+        <div class="section-title"><h2>Regras da promoção</h2></div>
+        <div class="rules-content">
+          <p class="lead lead-small" id="rulesIntro">
+            A promoção é realizada em ciclos, com participação gratuita para maiores de 18 anos.
+          </p>
+
+          <div class="rules-grid">
+            <div>
+              <h3>Como participar</h3>
+              <ul>
+                <li>Informe CPF, nome completo, WhatsApp e cidade.</li>
+                <li>Responda ao quiz do ciclo vigente.</li>
+                <li>São <strong id="rulesTotalQuestions">10 perguntas</strong> por tentativa.</li>
+                <li>Para entrar na lista de classificados, é necessário acertar <strong id="rulesMinimumCorrect">6 perguntas</strong>.</li>
+                <li>Quem não atingir a pontuação mínima poderá tentar novamente no mesmo ciclo, com novas perguntas.</li>
+                <li>Quem atingir a pontuação mínima fica classificado para a urna do ciclo e não poderá fazer nova tentativa naquele ciclo.</li>
+              </ul>
+            </div>
+            <div>
+              <h3>Prêmio</h3>
+              <ul>
+                <li>O prêmio de cada ciclo será <strong>um tanque de combustível</strong>, limitado a <strong>40 litros de gasolina comum</strong>.</li>
+                <li>A Rede Vale é composta por quatro postos, sendo um em Passo de Torres e três em Criciúma.</li>
+                <li>A autorização de abastecimento indicará em qual dos três postos de Criciúma deverá acontecer o abastecimento.</li>
+                <li>O sorteio acontecerá na sexta-feira seguinte ao encerramento de cada ciclo.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="cycle-explain rules-highlight">
+            <strong>Regras de validação do ciclo</strong>
+            <span id="cycleValidationRule">As exigências do ciclo serão informadas pela organização e poderão incluir seguir a Rede Vale e o HN Notícias no Instagram, estar em um grupo de notícias do HN ou ter baixado o aplicativo de descontos da Rede Vale.</span>
+          </div>
+
+          <p class="meta">
+            As respostas corretas não são exibidas durante o ciclo. No resultado, o participante verá apenas quais perguntas acertou ou errou e qual alternativa marcou.
+          </p>
+
+          <div class="actions">
+            <button class="btn" type="button" id="rulesStartBtn">Começar quiz</button>
+            <a class="btn secondary support-link" href="https://w.app/bze3ol" target="_blank" rel="noopener">Falar com suporte</a>
+          </div>
         </div>
       </section>
 
@@ -97,7 +145,7 @@
         <div class="section-title"><h2>Você já está classificado!</h2></div>
         <p class="lead" id="alreadyText"></p>
         <div class="actions">
-          <button class="btn" type="button" data-show-section="classificados">Ver lista de classificados</button>
+          <button class="btn" type="button" data-show-section="classificados">Ver classificados</button>
           <a class="btn gold partner-link" target="_blank" rel="noopener">Seguir parceiro</a>
           <a class="btn secondary hn-link" target="_blank" rel="noopener">Seguir HN Notícias</a>
         </div>
@@ -156,6 +204,11 @@
         </div>
       </section>
     </main>
+
+    <a class="support-float support-link" href="https://w.app/bze3ol" target="_blank" rel="noopener">Suporte</a>
+    <div class="rede-vale-fixed-banner" aria-label="Rede Vale">
+      <img src="/assets/rede-vale-banner.png" alt="Rede Vale - Rede de Postos">
+    </div>
 
     <footer class="footer">
       Craque da Copa HN — HN Notícias

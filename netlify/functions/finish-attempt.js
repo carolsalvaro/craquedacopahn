@@ -91,7 +91,7 @@ exports.handler = async (event) => {
     const correct = finalRows.filter(a => a.is_correct === true).length;
     const wrong = finalRows.length - correct;
     const scorePercent = Number(((correct / finalRows.length) * 100).toFixed(2));
-    const minimum = attempt.cycle.minimum_correct_answers || 11;
+    const minimum = attempt.cycle.minimum_correct_answers || 6;
     const isClassified = correct >= minimum;
 
     if (attempt.status !== "finished") {
