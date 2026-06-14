@@ -1,8 +1,0 @@
-Ajustes Rede Vale - Craque da Copa HN
-
-1. Substitua os arquivos do patch no GitHub.
-2. Faça deploy no Netlify.
-3. Rode o arquivo SQL no Supabase:
-   craque-da-copa-hn-ajustes-rede-vale.sql
-
-O SQL cria/atualiza 5 ciclos, define 10 perguntas e 6 acertos, vincula as perguntas ativas aos ciclos e cadastra o prêmio da Rede Vale.
