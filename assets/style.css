@@ -590,3 +590,110 @@ body{
 .table td:nth-child(2){
   max-width:210px;
 }
+
+
+/* Ajuste visual da seção Regras da promoção */
+.rules-card{
+  overflow:hidden;
+  position:relative;
+}
+.rules-card:before{
+  content:"";
+  position:absolute;
+  inset:0 0 auto 0;
+  height:6px;
+  background:linear-gradient(90deg,var(--blue),#0f9d58,var(--gold));
+}
+.rules-title{
+  align-items:flex-start;
+  margin-bottom:10px;
+}
+.rules-title h2{
+  margin-top:10px;
+}
+.rules-validation{
+  margin:18px 0;
+  padding:18px 20px;
+  border-radius:18px;
+  background:linear-gradient(135deg,#fff8e5,#ffffff);
+  border:1px solid rgba(197,155,67,.36);
+  box-shadow:0 12px 28px rgba(197,155,67,.12);
+}
+.rules-validation strong{
+  display:block;
+  color:var(--blue-2);
+  font-size:16px;
+  margin-bottom:6px;
+}
+.rules-validation span{
+  color:var(--muted);
+  font-weight:750;
+  line-height:1.5;
+}
+.rules-grid-clean{
+  align-items:stretch;
+}
+.rules-box{
+  background:#f8fbff;
+  border:1px solid #dfe8f6;
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 10px 26px rgba(7,37,78,.06);
+}
+.rules-box-heading{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:8px;
+}
+.rules-box-heading h3{
+  margin:0;
+}
+.rules-icon{
+  width:34px;
+  height:34px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  background:var(--blue);
+  color:#fff;
+  font-weight:950;
+  box-shadow:0 8px 18px rgba(16,79,158,.22);
+}
+.rules-box ul{
+  margin-top:12px;
+}
+.rules-note{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  margin:18px 0 0;
+  padding:15px 16px;
+  border-radius:16px;
+  background:#f2f7ff;
+  border:1px solid #dbe8f8;
+  color:var(--muted);
+  line-height:1.45;
+  font-weight:750;
+}
+.rules-note strong{
+  color:var(--blue-2);
+  white-space:nowrap;
+}
+.rules-actions{
+  margin-top:20px;
+  justify-content:center;
+}
+@media(max-width:700px){
+  .rules-validation{
+    padding:16px;
+  }
+  .rules-box{
+    padding:17px;
+  }
+  .rules-note{
+    flex-direction:column;
+    gap:4px;
+  }
+}
