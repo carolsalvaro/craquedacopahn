@@ -1,9 +1,0 @@
-Ajuste do resultado final
-
-O botão "Ver classificados" foi removido do resultado final.
-No lugar dele, entrou o botão "Compartilhe o quiz", que abre o WhatsApp com mensagem pronta.
-
-Também removi o carregamento automático dos classificados ao final do quiz, reduzindo uma requisição desnecessária.
-
-Arquivo para substituir:
-- assets/app.js
