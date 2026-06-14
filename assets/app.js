@@ -379,6 +379,8 @@ async function finishAttempt(){
 
   const partnerUrl = state.activeCycle?.prize?.partner_instagram_url || "#";
   const partnerText = state.activeCycle?.prize?.partner_button_text || "Seguir Rede Vale";
+  const shareMessage = encodeURIComponent("Eu participei do Craque da Copa HN Notícias e Rede Vale de Postos! Teste seus conhecimentos sobre a Copa e concorra a um tanque de combustível: " + window.location.origin);
+  const shareUrl = "https://wa.me/?text=" + shareMessage;
   const hnUrl = state.activeCycle?.settings?.hn_instagram_url || "https://www.instagram.com/hnnoticias/";
 
   if(data.is_classified){

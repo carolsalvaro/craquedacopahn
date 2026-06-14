@@ -554,3 +554,15 @@ body{
 .cycle-schedule b{
   color:var(--blue);
 }
+
+
+/* Botão de compartilhamento */
+.btn.share-btn{
+  background:#25D366;
+  color:#fff;
+  border-color:#25D366;
+  box-shadow:0 10px 22px rgba(37,211,102,.24);
+}
+.btn.share-btn:hover{
+  filter:brightness(.96);
+}

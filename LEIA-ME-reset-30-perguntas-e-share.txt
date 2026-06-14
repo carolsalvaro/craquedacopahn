@@ -1,0 +1,18 @@
+Ajuste de perguntas e compartilhamento
+
+1. Substitua os arquivos do patch no GitHub:
+   - assets/app.js
+   - assets/style.css
+   - netlify/functions/start-attempt.js
+
+2. Faça deploy no Netlify.
+
+3. Rode no Supabase:
+   craque-da-copa-hn-reset-30-perguntas-rede-vale.sql
+
+O SQL apaga participações/testes, perguntas antigas e vínculos antigos.
+Mantém ciclos, prêmios e configurações.
+Depois cria 30 perguntas novas, sendo 18 fáceis, 9 médias e 3 difíceis, vinculadas aos 5 ciclos da Rede Vale.
+
+O botão "Ver classificados" foi retirado do resultado final.
+Foi incluído o botão "Compartilhe o quiz", abrindo o WhatsApp com mensagem pronta.

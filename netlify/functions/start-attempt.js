@@ -67,8 +67,8 @@ exports.handler = async (event) => {
     const usageMap = new Map((usageRows || []).map(u => [u.question_id, u]));
 
     const totalToPick = Number(cycle.questions_per_attempt || 10);
-    const easyQty = Math.max(1, Math.round(totalToPick * 0.4));
-    const mediumQty = Math.max(1, Math.round(totalToPick * 0.4));
+    const easyQty = Math.max(1, Math.round(totalToPick * 0.6));
+    const mediumQty = Math.max(1, Math.round(totalToPick * 0.3));
     const hardQty = Math.max(0, totalToPick - easyQty - mediumQty);
 
     let selected = [
