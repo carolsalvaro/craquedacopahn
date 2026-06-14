@@ -388,7 +388,7 @@ async function finishAttempt(){
     $("resultText").textContent = `Você acertou ${data.correct_answers} de ${data.total_questions} perguntas e já está na lista de classificados deste ciclo. Agora é só aguardar o sorteio junto com os demais acertadores. ${drawDateText()} A validação das regras do ciclo poderá ser conferida antes da entrega do prêmio.`;
     $("resultActions").innerHTML = `
       <button class="btn" type="button" data-show-section="ranking">Ver ranking</button>
-      <button class="btn secondary" type="button" data-show-section="classificados">Ver classificados</button>
+      <a class="btn share-btn" href="${shareUrl}" target="_blank" rel="noopener">Compartilhe o quiz</a>
       <a class="btn secondary" href="${hnUrl}" target="_blank" rel="noopener">Seguir HN Notícias</a>
       <a class="btn gold" href="${partnerUrl}" target="_blank" rel="noopener">${partnerText}</a>
       <a class="btn secondary" href="https://w.app/bze3ol" target="_blank" rel="noopener">Suporte</a>
@@ -399,7 +399,7 @@ async function finishAttempt(){
     $("resultActions").innerHTML = `
       <button class="btn big result-primary-action" id="tryAgainBtn" type="button">Participar novamente</button>
       <button class="btn" type="button" data-show-section="ranking">Ver ranking</button>
-      <button class="btn secondary" type="button" data-show-section="classificados">Ver classificados</button>
+      <a class="btn share-btn" href="${shareUrl}" target="_blank" rel="noopener">Compartilhe o quiz</a>
       <a class="btn secondary" href="${hnUrl}" target="_blank" rel="noopener">Seguir HN Notícias</a>
       <a class="btn gold" href="${partnerUrl}" target="_blank" rel="noopener">${partnerText}</a>
       <a class="btn secondary" href="https://w.app/bze3ol" target="_blank" rel="noopener">Suporte</a>
@@ -407,7 +407,6 @@ async function finishAttempt(){
     setTimeout(() => $("tryAgainBtn")?.addEventListener("click", startAttempt), 0);
   }
   await loadRanking();
-  await loadClassified();
   window.scrollTo({top:$("resultSection").offsetTop - 20, behavior:"smooth"});
 }
 
@@ -430,5 +429,4 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   await loadActiveCycle();
   await loadRanking();
-  await loadClassified();
 });
