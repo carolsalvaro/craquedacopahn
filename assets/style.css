@@ -525,3 +525,32 @@ body{
     max-height:82px;
   }
 }
+
+
+/* Cronograma dos ciclos na home */
+.cycle-calendar{
+  text-align:left;
+}
+.cycle-calendar > span{
+  display:block;
+  margin-top:6px;
+}
+.cycle-schedule{
+  margin:12px 0 2px;
+  padding:0;
+  list-style:none;
+  display:grid;
+  gap:8px;
+}
+.cycle-schedule li{
+  background:rgba(255,255,255,.72);
+  border:1px solid rgba(16,79,158,.12);
+  border-radius:12px;
+  padding:9px 11px;
+  color:var(--blue-2);
+  font-weight:800;
+  font-size:14px;
+}
+.cycle-schedule b{
+  color:var(--blue);
+}

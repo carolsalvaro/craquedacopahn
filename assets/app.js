@@ -7,7 +7,8 @@ const state = {
   currentIndex: 0,
   selectedOption: null,
   answers: {},
-  savedAnswers: {}
+  savedAnswers: {},
+  isStartingAttempt: false
 };
 
 const $ = (id) => document.getElementById(id);
@@ -185,17 +186,27 @@ async function identify(){
   }catch(e){ alert(e.message); }
 }
 
+
+function setStartButtonsLoading(isLoading){
+  ["registerBtn","startAttemptKnownBtn","tryAgainBtn","startBtn","rulesStartBtn"].forEach(id => {
+    const el = $(id);
+    if(el) el.disabled = !!isLoading;
+  });
+}
+
 async function register(){
+  const ageOk = $("ageInput") ? $("ageInput").checked : ($("acceptInput") ? $("acceptInput").checked : false);
+  const rulesOk = $("rulesAcceptedInput") ? $("rulesAcceptedInput").checked : ($("acceptInput") ? $("acceptInput").checked : false);
   const payload = {
     cpf: onlyDigits($("cpfInput").value),
     name: $("nameInput").value.trim(),
     whatsapp: onlyDigits($("whatsappInput").value),
     city: $("cityInput").value.trim(),
-    is_18_confirmed: $("acceptInput").checked,
-    regulation_accepted: $("acceptInput").checked
+    is_18_confirmed: ageOk,
+    regulation_accepted: rulesOk
   };
-  if(!payload.name || payload.whatsapp.length < 10 || !payload.city || !payload.regulation_accepted){
-    return alert("Preencha todos os campos e aceite o regulamento.");
+  if(!payload.name || payload.whatsapp.length < 10 || !payload.city || !ageOk || !rulesOk){
+    return alert("Preencha todos os campos, confirme que tem 18 anos ou mais e aceite as regras da promoção.");
   }
   try{
     const data = await api("/register", {method:"POST", body:JSON.stringify(payload)});
@@ -205,24 +216,36 @@ async function register(){
 }
 
 async function startAttempt(){
+  if(state.isStartingAttempt) return;
   if(!state.activeCycle) return alert("Nenhum ciclo ativo.");
   if(!state.participant?.id) return alert("Participante não identificado.");
+
+  state.isStartingAttempt = true;
+  setStartButtonsLoading(true);
+
   try{
     const data = await api("/start-attempt", {
       method:"POST",
       body:JSON.stringify({cycle_id: state.activeCycle.id, participant_id: state.participant.id})
     });
+
     state.attempt = data.attempt;
     state.questions = data.questions;
     state.currentIndex = 0;
     state.selectedOption = null;
     state.answers = {};
     state.savedAnswers = {};
+
     hideFlow();
     $("quizSection").classList.remove("hidden");
     renderQuestion();
     window.scrollTo({top:$("quizSection").offsetTop - 20, behavior:"smooth"});
-  }catch(e){ alert(e.message); }
+  }catch(e){
+    alert(e.message);
+    setStartButtonsLoading(false);
+  }finally{
+    state.isStartingAttempt = false;
+  }
 }
 
 function answerKeyFor(q){
