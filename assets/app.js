@@ -12,6 +12,7 @@ const state = {
 };
 
 const $ = (id) => document.getElementById(id);
+const HN_INSTAGRAM_URL = "https://www.instagram.com/hnnoticiascriciuma/";
 
 function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
 function formatCPF(v){
