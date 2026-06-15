@@ -725,48 +725,46 @@ body{
   vertical-align:middle;
 }
 
-/* Banner Vale no final da página, sem ficar fixo */
-body{
-  padding-bottom:0 !important;
+
+/* Ajustes da tela de participantes do admin */
+#tab-participants .table-card{
+  overflow-x:auto;
 }
 
-.rede-vale-fixed-banner{
-  position:static !important;
-  left:auto !important;
-  right:auto !important;
-  bottom:auto !important;
-  z-index:1 !important;
-
-  width:min(100%, 980px);
-  margin:34px auto 18px;
-  background:#063f27;
-  border:3px solid #d1a844;
-  border-radius:22px;
-  box-shadow:0 14px 32px rgba(0,0,0,.14);
-  overflow:hidden;
+#tab-participants .table{
+  min-width:1120px;
+  table-layout:fixed;
 }
 
-.rede-vale-fixed-banner img{
-  display:block;
-  width:100%;
-  height:auto !important;
-  max-height:none !important;
-  object-fit:contain !important;
-  object-position:center center;
+#tab-participants .table th:nth-child(1),
+#tab-participants .table td:nth-child(1){width:160px}
+#tab-participants .table th:nth-child(2),
+#tab-participants .table td:nth-child(2){width:135px}
+#tab-participants .table th:nth-child(3),
+#tab-participants .table td:nth-child(3){width:130px}
+#tab-participants .table th:nth-child(4),
+#tab-participants .table td:nth-child(4){width:140px}
+#tab-participants .table th:nth-child(5),
+#tab-participants .table td:nth-child(5){width:155px;white-space:nowrap}
+#tab-participants .table th:nth-child(6),
+#tab-participants .table td:nth-child(6){width:90px;text-align:center}
+#tab-participants .table th:nth-child(7),
+#tab-participants .table td:nth-child(7){width:125px}
+#tab-participants .table th:nth-child(8),
+#tab-participants .table td:nth-child(8){width:260px}
+
+.admin-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
 }
 
-.support-float{
-  bottom:22px !important;
+.admin-actions .btn.small{
+  white-space:nowrap;
 }
 
-@media(max-width:700px){
-  .rede-vale-fixed-banner{
-    width:calc(100% - 28px);
-    margin:28px auto 16px;
-    border-radius:16px;
-  }
-
-  .support-float{
-    bottom:18px !important;
-  }
+.delete-participation-btn{
+  background:var(--danger);
+  color:#fff;
 }

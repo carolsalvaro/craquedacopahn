@@ -115,14 +115,102 @@ async function saveQuestion(){
 
 async function loadParticipants(){
   if(!$("participantsBody")) return;
-  const data=await api("/admin-participants"); participantsCache=data.participants||[];
-  $("participantsBody").innerHTML=participantsCache.map(p=>`<tr><td>${p.name}</td><td>${formatCPF(p.cpf)}</td><td>${formatPhone(p.whatsapp)}</td><td>${p.city}</td><td>${p.total_attempts||0}</td><td>${p.has_classified?'<span class="badge success">Sim</span>':'<span class="badge">Não</span>'}</td><td class="actions-cell"><button class="btn small muted edit-participant-btn" data-id="${p.id}">Editar</button><button class="btn small" data-participant-answers="${p.id}">Ver respostas</button></td></tr>`).join("");
-  document.querySelectorAll(".edit-participant-btn").forEach(btn=>btn.addEventListener("click",()=>editParticipant(btn.dataset.id)));
-  document.querySelectorAll("[data-participant-answers]").forEach(btn=>btn.addEventListener("click",()=>loadParticipantAnswers(btn.dataset.participantAnswers).catch(e=>alert(e.message))));
+
+  const data = await api("/admin-participants");
+  participantsCache = data.participants || [];
+
+  $("participantsBody").innerHTML = participantsCache.map(p => `
+    <tr>
+      <td>${p.name}</td>
+      <td>${formatCPF(p.cpf)}</td>
+      <td>${formatPhone(p.whatsapp)}</td>
+      <td>${p.city}</td>
+      <td>${formatDateTime(p.last_attempt_at)}</td>
+      <td>${p.total_attempts || 0}</td>
+      <td>${p.has_classified ? '<span class="badge success">Sim</span>' : '<span class="badge">Não</span>'}</td>
+      <td class="actions-cell">
+        <div class="admin-actions">
+          <button class="btn small muted edit-participant-btn" data-id="${p.id}">Editar</button>
+          <button class="btn small" data-participant-answers="${p.id}">Ver respostas</button>
+          <button class="btn small danger delete-participation-btn" data-delete-participation="${p.id}">Excluir participação</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+
+  document.querySelectorAll(".edit-participant-btn").forEach(btn => {
+    btn.addEventListener("click", () => editParticipant(btn.dataset.id));
+  });
+
+  document.querySelectorAll("[data-participant-answers]").forEach(btn => {
+    btn.addEventListener("click", () => loadParticipantAnswers(btn.dataset.participantAnswers).catch(e => alert(e.message)));
+  });
+
+  document.querySelectorAll("[data-delete-participation]").forEach(btn => {
+    btn.addEventListener("click", () => deleteParticipation(btn.dataset.deleteParticipation).catch(e => alert(e.message)));
+  });
 }
-function clearParticipantForm(){ $("participantIdInput").value=""; ["participantNameInput","participantCpfInput","participantWhatsappInput","participantCityInput"].forEach(id=>$(id).value=""); }
-function editParticipant(id){ const p=participantsCache.find(x=>x.id===id); if(!p) return; $("participantIdInput").value=p.id; $("participantNameInput").value=p.name||""; $("participantCpfInput").value=formatCPF(p.cpf); $("participantWhatsappInput").value=formatPhone(p.whatsapp); $("participantCityInput").value=p.city||""; window.scrollTo({top:$("tab-participants").offsetTop-20,behavior:"smooth"}); }
-async function saveParticipant(){ const payload={id:$("participantIdInput").value,name:$("participantNameInput").value.trim(),whatsapp:onlyDigits($("participantWhatsappInput").value),city:$("participantCityInput").value.trim()}; if(!payload.id) return alert("Clique em editar em um participante primeiro."); if(!payload.name||!payload.whatsapp||!payload.city) return alert("Preencha nome, WhatsApp e cidade."); await api("/admin-participants",{method:"POST",body:JSON.stringify(payload)}); show("Participante atualizado."); clearParticipantForm(); await loadParticipants(); }
+
+function clearParticipantForm(){
+  $("participantIdInput").value = "";
+  ["participantNameInput","participantCpfInput","participantWhatsappInput","participantCityInput"].forEach(id => $(id).value = "");
+}
+
+function editParticipant(id){
+  const p = participantsCache.find(x => x.id === id);
+  if(!p) return;
+
+  $("participantIdInput").value = p.id;
+  $("participantNameInput").value = p.name || "";
+  $("participantCpfInput").value = formatCPF(p.cpf);
+  $("participantWhatsappInput").value = formatPhone(p.whatsapp);
+  $("participantCityInput").value = p.city || "";
+
+  window.scrollTo({top:$("tab-participants").offsetTop - 20, behavior:"smooth"});
+}
+
+async function saveParticipant(){
+  const payload = {
+    id: $("participantIdInput").value,
+    name: $("participantNameInput").value.trim(),
+    whatsapp: onlyDigits($("participantWhatsappInput").value),
+    city: $("participantCityInput").value.trim()
+  };
+
+  if(!payload.id) return alert("Clique em editar em um participante primeiro.");
+  if(!payload.name || !payload.whatsapp || !payload.city) return alert("Preencha nome, WhatsApp e cidade.");
+
+  await api("/admin-participants", {method:"POST", body:JSON.stringify(payload)});
+  show("Participante atualizado.");
+  clearParticipantForm();
+  await loadParticipants();
+}
+
+async function deleteParticipation(participantId){
+  const p = participantsCache.find(x => x.id === participantId);
+  if(!p) return alert("Participante não encontrado.");
+
+  const okDelete = confirm(
+    `Excluir a participação de ${p.name}?\n\n` +
+    `Isso apaga as tentativas e respostas deste participante no ciclo ativo, como se ele ainda não tivesse participado. O cadastro será mantido.`
+  );
+
+  if(!okDelete) return;
+
+  const data = await api("/admin-participants", {
+    method:"DELETE",
+    body:JSON.stringify({id: participantId})
+  });
+
+  show(data.message || "Participação excluída. O participante já pode tentar novamente.");
+
+  if($("participantAnswersCard")) {
+    $("participantAnswersCard").classList.add("hidden");
+  }
+
+  await loadParticipants();
+  await loadCycles();
+}
 
 
 function answerStatusBadge(isCorrect){

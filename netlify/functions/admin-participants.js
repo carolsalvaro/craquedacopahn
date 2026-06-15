@@ -80,6 +80,74 @@ exports.handler = async (event) => {
       return ok({ participant: data });
     }
 
+    if (event.httpMethod === "DELETE") {
+      const b = parseBody(event);
+      const participantId = b.id || b.participant_id;
+      if (!participantId) return bad("Participante não informado.");
+
+      const { data: participant, error: participantError } = await supabase
+        .from("quiz_participants")
+        .select("id,name")
+        .eq("id", participantId)
+        .maybeSingle();
+      if (participantError) throw participantError;
+      if (!participant) return bad("Participante não encontrado.", 404);
+
+      const { data: activeCycle, error: cycleError } = await supabase
+        .from("quiz_cycles")
+        .select("id,title")
+        .eq("status", "active")
+        .limit(1)
+        .maybeSingle();
+      if (cycleError) throw cycleError;
+      if (!activeCycle) return bad("Nenhum ciclo ativo encontrado.");
+
+      const { data: attempts, error: attemptsError } = await supabase
+        .from("quiz_attempts")
+        .select("id")
+        .eq("participant_id", participantId)
+        .eq("cycle_id", activeCycle.id);
+      if (attemptsError) throw attemptsError;
+
+      const attemptIds = (attempts || []).map(a => a.id);
+
+      const { error: winnersError } = await supabase
+        .from("quiz_winners")
+        .delete()
+        .eq("participant_id", participantId)
+        .eq("cycle_id", activeCycle.id);
+      if (winnersError) throw winnersError;
+
+      const { error: usageError } = await supabase
+        .from("quiz_question_participant_usage")
+        .delete()
+        .eq("participant_id", participantId)
+        .eq("cycle_id", activeCycle.id);
+      if (usageError) throw usageError;
+
+      if (attemptIds.length) {
+        const { error: answersError } = await supabase
+          .from("quiz_attempt_questions")
+          .delete()
+          .in("attempt_id", attemptIds);
+        if (answersError) throw answersError;
+
+        const { error: deleteAttemptsError } = await supabase
+          .from("quiz_attempts")
+          .delete()
+          .in("id", attemptIds);
+        if (deleteAttemptsError) throw deleteAttemptsError;
+      }
+
+      return ok({
+        deleted: true,
+        participant_id: participantId,
+        cycle_id: activeCycle.id,
+        attempts_deleted: attemptIds.length,
+        message: "Participação excluída. O participante já pode tentar novamente no ciclo ativo."
+      });
+    }
+
     return bad("Método não permitido.", 405);
   } catch (e) {
     return bad(e.message, e.statusCode || 500);
