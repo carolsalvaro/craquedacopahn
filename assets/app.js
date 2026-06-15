@@ -13,8 +13,6 @@ const state = {
 
 const $ = (id) => document.getElementById(id);
 
-const HN_INSTAGRAM_URL = "https://www.instagram.com/hnnoticiascriciuma/";
-
 function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
 function formatCPF(v){
   v = onlyDigits(v).slice(0,11);
@@ -77,7 +75,7 @@ function showNotice(msg){
 function setPartnerLinks(){
   const prize = state.activeCycle?.prize || {};
   const partnerUrl = prize.partner_instagram_url || "#";
-  const hnUrl = HN_INSTAGRAM_URL;
+  const hnUrl = state.activeCycle?.settings?.hn_instagram_url || "https://www.instagram.com/hnnoticias/";
   document.querySelectorAll(".partner-link").forEach(a => a.href = partnerUrl);
   document.querySelectorAll(".hn-link").forEach(a => a.href = hnUrl);
 }
@@ -114,7 +112,7 @@ async function loadActiveCycle(){
       $("partnerBtn").textContent = c?.prize?.partner_button_text || "Seguir parceiro";
       $("partnerBtn").href = c?.prize?.partner_instagram_url || "#";
     }
-    if ($("hnBtn")) $("hnBtn").href = HN_INSTAGRAM_URL;
+    if ($("hnBtn")) $("hnBtn").href = c?.settings?.hn_instagram_url || "https://www.instagram.com/hnnoticias/";
     setPartnerLinks();
 
     if(!c){
@@ -187,6 +185,7 @@ async function identify(){
     }
   }catch(e){ alert(e.message); }
 }
+
 
 function setStartButtonsLoading(isLoading){
   ["registerBtn","startAttemptKnownBtn","tryAgainBtn","startBtn","rulesStartBtn"].forEach(id => {
@@ -285,6 +284,7 @@ async function saveCurrentAnswer(){
   const selected = state.selectedOption || state.answers[key];
   if(!selected) return false;
 
+  // Se a mesma resposta já foi registrada, não precisa gravar novamente.
   if(state.savedAnswers[key] === selected) return true;
 
   await api("/answer", {
@@ -381,7 +381,7 @@ async function finishAttempt(){
   const partnerText = state.activeCycle?.prize?.partner_button_text || "Seguir Rede Vale";
   const shareMessage = encodeURIComponent("Eu participei do Craque da Copa HN Notícias e Rede Vale de Postos! Teste seus conhecimentos sobre a Copa e concorra a um tanque de combustível: " + window.location.origin);
   const shareUrl = "https://wa.me/?text=" + shareMessage;
-  const hnUrl = HN_INSTAGRAM_URL;
+  const hnUrl = state.activeCycle?.settings?.hn_instagram_url || "https://www.instagram.com/hnnoticias/";
 
   if(data.is_classified){
     $("resultTitle").textContent = "Parabéns, você está classificado!";

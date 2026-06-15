@@ -19,7 +19,7 @@ exports.handler = async (event) => {
       if (ids.length) {
         const { data: a, error: aError } = await supabase
           .from("quiz_attempts")
-          .select("participant_id,is_classified,status")
+          .select("participant_id,is_classified,status,started_at,finished_at,created_at")
           .in("participant_id", ids);
         if (aError) throw aError;
         attempts = a || [];
@@ -27,17 +27,35 @@ exports.handler = async (event) => {
 
       const byParticipant = new Map();
       attempts.forEach(a => {
-        if (!byParticipant.has(a.participant_id)) byParticipant.set(a.participant_id, { total_attempts: 0, has_classified: false });
+        if (!byParticipant.has(a.participant_id)) {
+          byParticipant.set(a.participant_id, {
+            total_attempts: 0,
+            has_classified: false,
+            last_attempt_at: null
+          });
+        }
+
         const item = byParticipant.get(a.participant_id);
         item.total_attempts++;
-        if (a.is_classified && a.status === "finished") item.has_classified = true;
+
+        if (a.is_classified && a.status === "finished") {
+          item.has_classified = true;
+        }
+
+        const dateValue = a.finished_at || a.started_at || a.created_at;
+        if (dateValue) {
+          const current = item.last_attempt_at ? new Date(item.last_attempt_at).getTime() : 0;
+          const candidate = new Date(dateValue).getTime();
+          if (candidate > current) item.last_attempt_at = dateValue;
+        }
       });
 
       return ok({
         participants: (participants || []).map(p => ({
           ...p,
           total_attempts: byParticipant.get(p.id)?.total_attempts || 0,
-          has_classified: byParticipant.get(p.id)?.has_classified || false
+          has_classified: byParticipant.get(p.id)?.has_classified || false,
+          last_attempt_at: byParticipant.get(p.id)?.last_attempt_at || null
         }))
       });
     }

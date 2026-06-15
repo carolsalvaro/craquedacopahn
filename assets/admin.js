@@ -24,19 +24,33 @@ function formatQuestionCycles(text){
   const raw = String(text || "").trim();
   if(!raw || raw === "Sem ciclo vinculado") return '<span class="badge warning">Sem ciclo</span>';
 
+  const cycleNumbers = [...raw.matchAll(/Ciclo\s*([1-5])/g)].map(m => m[1]);
+  const uniqueNumbers = [...new Set(cycleNumbers)];
+
+  if(["1","2","3","4","5"].every(n => uniqueNumbers.includes(n))){
+    return '<span class="badge success">Todos os 5 ciclos</span>';
+  }
+
+  if(uniqueNumbers.length > 1){
+    return `<span class="badge success">${uniqueNumbers.length} ciclos</span>`;
+  }
+
   const parts = raw.split(",").map(x => x.trim()).filter(Boolean);
   const unique = [...new Set(parts)];
-
-  const valeCycles = unique.filter(x => /^Ciclo [1-5] — Rede Vale$/.test(x));
-  if(valeCycles.length >= 5) return '<span class="badge success">Todos os 5 ciclos</span>';
-  if(valeCycles.length > 1) return `<span class="badge success">${valeCycles.length} ciclos Rede Vale</span>`;
-
   return unique.map(x => `<span class="cycle-pill">${x}</span>`).join(" ");
 }
 
 function formatPhone(v){ v=onlyDigits(v).slice(0,11); if(v.length<=10) return v.replace(/(\d{2})(\d)/,"($1) $2").replace(/(\d{4})(\d)/,"$1-$2"); return v.replace(/(\d{2})(\d)/,"($1) $2").replace(/(\d{5})(\d)/,"$1-$2"); }
 function toLocalInput(iso){ if(!iso) return ""; const d=new Date(iso); const pad=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
 function periodText(c){ const a=c.start_at?new Date(c.start_at).toLocaleDateString("pt-BR"):"A definir"; const b=c.end_at?new Date(c.end_at).toLocaleDateString("pt-BR"):"A definir"; return `${a} a ${b}`; }
+function formatDateTime(iso){
+  if(!iso) return "Nunca";
+  try{
+    return new Date(iso).toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", year:"2-digit", hour:"2-digit", minute:"2-digit"});
+  }catch(e){
+    return "Nunca";
+  }
+}
 
 function requireLogin(){ if(ADMIN_PASSWORD){ $("loginBox").classList.add("hidden"); $("adminApp").classList.remove("hidden"); loadAdmin().catch(e=>alert(e.message)); } }
 async function loadAdmin(){ await loadCycles(); await loadQuestions(); await loadParticipants(); }
@@ -81,7 +95,7 @@ async function saveCycle(){
 
 async function loadQuestions(){
   const data=await api("/admin-questions"); questionsCache=data.questions||[];
-  $("questionsBody").innerHTML=questionsCache.map(q=>`<tr><td>${q.question_text}</td><td>${q.cycle_titles||"Sem ciclo vinculado"}</td><td>${q.difficulty}</td><td>${q.total_correct||0}</td><td>${q.total_wrong||0}</td><td>${q.correct_rate_percent||0}%</td><td class="actions-cell"><button class="btn small muted edit-question-btn" data-id="${q.question_id}">Editar</button></td></tr>`).join("");
+  $("questionsBody").innerHTML=questionsCache.map(q=>`<tr><td>${q.question_text}</td><td>${formatQuestionCycles(q.cycle_titles)}</td><td>${q.difficulty}</td><td>${q.total_correct||0}</td><td>${q.total_wrong||0}</td><td>${q.correct_rate_percent||0}%</td><td class="actions-cell"><button class="btn small muted edit-question-btn" data-id="${q.question_id}">Editar</button></td></tr>`).join("");
   document.querySelectorAll(".edit-question-btn").forEach(btn=>btn.addEventListener("click",()=>editQuestion(btn.dataset.id)));
 }
 function clearQuestionForm(){ $("questionFormTitle").textContent="Nova pergunta"; $("questionIdInput").value=""; ["questionTextInput","optionAInput","optionBInput","optionCInput","optionDInput","categoryInput"].forEach(id=>$(id).value=""); $("correctInput").value="A"; $("difficultyInput").value="easy"; }
@@ -153,8 +167,45 @@ async function loadParticipantAnswers(participantId){
   window.scrollTo({top:$("participantAnswersCard").offsetTop - 20, behavior:"smooth"});
 }
 
-async function loadClassifiedAdmin(){ const cycleId=$("classifiedCycleInput").value; const data=await api(`/admin-classified?cycle_id=${encodeURIComponent(cycleId)}`); classifiedCache=data.items||[]; $("adminClassifiedBody").innerHTML=classifiedCache.map(r=>`<tr><td>${r.name}</td><td>${r.cpf_last_digits}</td><td>${r.whatsapp}</td><td>${r.city}</td><td>${r.score_text}</td></tr>`).join(""); $("winnerParticipantInput").innerHTML=classifiedCache.map(r=>`<option value="${r.participant_id}" data-attempt="${r.attempt_id}">${r.name} — ${r.score_text}</option>`).join(""); }
-function printRaffle(){ const html=classifiedCache.map(r=>`<div style="border:1px dashed #333;padding:14px;margin:10px;width:280px;display:inline-block;font-family:Arial"><strong>${r.name}</strong><br>${r.city}<br>CPF final: ${r.cpf_last_digits}<br>Pontuação: ${r.score_text}</div>`).join(""); const w=window.open("","_blank"); w.document.write(`<html><head><title>Urna</title></head><body>${html}</body></html>`); w.document.close(); w.print(); }
+async function loadClassifiedAdmin(){
+  let cycleId=$("classifiedCycleInput").value;
+  if(!cycleId && cyclesCache.length){
+    const active=cyclesCache.find(c=>c.status==="active") || cyclesCache[0];
+    cycleId=active?.cycle_id;
+    if(cycleId) $("classifiedCycleInput").value=cycleId;
+  }
+  if(!cycleId) return alert("Selecione um ciclo.");
+
+  const data=await api(`/admin-classified?cycle_id=${encodeURIComponent(cycleId)}`);
+  classifiedCache=data.items||[];
+
+  if(!classifiedCache.length){
+    $("adminClassifiedBody").innerHTML=`<tr><td colspan="5">Nenhum classificado encontrado para este ciclo.</td></tr>`;
+    $("winnerParticipantInput").innerHTML="";
+    return;
+  }
+
+  $("adminClassifiedBody").innerHTML=classifiedCache.map(r=>`<tr>
+    <td>${r.name}</td>
+    <td>${r.cpf_last_digits}</td>
+    <td>${formatPhone(r.whatsapp)}</td>
+    <td>${r.city}</td>
+    <td>${r.score_text}</td>
+  </tr>`).join("");
+
+  $("winnerParticipantInput").innerHTML=classifiedCache.map(r=>`<option value="${r.participant_id}" data-attempt="${r.attempt_id}">${r.name} — ${r.score_text}</option>`).join("");
+}
+function printRaffle(){
+  if(!classifiedCache.length){
+    alert("Carregue os classificados do ciclo antes de imprimir.");
+    return;
+  }
+  const html=classifiedCache.map(r=>`<div style="border:1px dashed #333;padding:14px;margin:10px;width:280px;display:inline-block;font-family:Arial"><strong>${r.name}</strong><br>${r.city}<br>CPF final: ${r.cpf_last_digits}<br>Pontuação: ${r.score_text}</div>`).join("");
+  const w=window.open("","_blank");
+  w.document.write(`<html><head><title>Urna</title></head><body>${html}</body></html>`);
+  w.document.close();
+  w.print();
+}
 async function saveWinner(){ const participantId=$("winnerParticipantInput").value; const selected=$("winnerParticipantInput").selectedOptions[0]; const payload={cycle_id:$("winnerCycleInput").value,participant_id:participantId,attempt_id:selected?.dataset?.attempt||null,draw_date:$("winnerDateInput").value||null,status:$("winnerStatusInput").value,notes:$("winnerNotesInput").value}; if(!payload.cycle_id||!payload.participant_id) return alert("Selecione ciclo e participante."); await api("/admin-winner",{method:"POST",body:JSON.stringify(payload)}); show("Vencedor registrado."); }
 
 document.addEventListener("DOMContentLoaded",()=>{
