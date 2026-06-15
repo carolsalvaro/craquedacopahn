@@ -724,3 +724,70 @@ body{
 .table td{
   vertical-align:middle;
 }
+
+/* Correção responsiva do banner fixo da Vale no rodapé */
+body{
+  padding-bottom:96px;
+}
+
+.rede-vale-fixed-banner{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:55;
+  height:82px;
+  background:#063f27;
+  border-top:3px solid #d1a844;
+  box-shadow:0 -8px 20px rgba(0,0,0,.16);
+  overflow:hidden;
+}
+
+.rede-vale-fixed-banner img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center center;
+}
+
+/* Desktop grande: deixa mais discreto */
+@media(min-width:1100px){
+  body{
+    padding-bottom:88px;
+  }
+
+  .rede-vale-fixed-banner{
+    height:76px;
+  }
+}
+
+/* Celular */
+@media(max-width:700px){
+  body{
+    padding-bottom:92px;
+  }
+
+  .rede-vale-fixed-banner{
+    height:76px;
+  }
+
+  .support-float{
+    bottom:88px;
+  }
+}
+
+/* Celular muito pequeno */
+@media(max-width:420px){
+  body{
+    padding-bottom:84px;
+  }
+
+  .rede-vale-fixed-banner{
+    height:68px;
+  }
+
+  .support-float{
+    bottom:80px;
+  }
+}
