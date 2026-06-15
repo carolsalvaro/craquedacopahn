@@ -725,69 +725,48 @@ body{
   vertical-align:middle;
 }
 
-/* Correção responsiva do banner fixo da Vale no rodapé */
+/* Banner Vale no final da página, sem ficar fixo */
 body{
-  padding-bottom:96px;
+  padding-bottom:0 !important;
 }
 
 .rede-vale-fixed-banner{
-  position:fixed;
-  left:0;
-  right:0;
-  bottom:0;
-  z-index:55;
-  height:82px;
+  position:static !important;
+  left:auto !important;
+  right:auto !important;
+  bottom:auto !important;
+  z-index:1 !important;
+
+  width:min(100%, 980px);
+  margin:34px auto 18px;
   background:#063f27;
-  border-top:3px solid #d1a844;
-  box-shadow:0 -8px 20px rgba(0,0,0,.16);
+  border:3px solid #d1a844;
+  border-radius:22px;
+  box-shadow:0 14px 32px rgba(0,0,0,.14);
   overflow:hidden;
 }
 
 .rede-vale-fixed-banner img{
   display:block;
   width:100%;
-  height:100%;
-  object-fit:cover;
+  height:auto !important;
+  max-height:none !important;
+  object-fit:contain !important;
   object-position:center center;
 }
 
-/* Desktop grande: deixa mais discreto */
-@media(min-width:1100px){
-  body{
-    padding-bottom:88px;
-  }
-
-  .rede-vale-fixed-banner{
-    height:76px;
-  }
+.support-float{
+  bottom:22px !important;
 }
 
-/* Celular */
 @media(max-width:700px){
-  body{
-    padding-bottom:92px;
-  }
-
   .rede-vale-fixed-banner{
-    height:76px;
+    width:calc(100% - 28px);
+    margin:28px auto 16px;
+    border-radius:16px;
   }
 
   .support-float{
-    bottom:88px;
-  }
-}
-
-/* Celular muito pequeno */
-@media(max-width:420px){
-  body{
-    padding-bottom:84px;
-  }
-
-  .rede-vale-fixed-banner{
-    height:68px;
-  }
-
-  .support-float{
-    bottom:80px;
+    bottom:18px !important;
   }
 }
