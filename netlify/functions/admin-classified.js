@@ -2,7 +2,10 @@ const { getSupabase } = require("./_lib/supabase");
 const { ok, bad, checkAdmin } = require("./_lib/utils");
 
 function lastDigits(cpf) {
-  return String(cpf || "").replace(/\D/g, "").slice(-3) || "---";
+  const digits = String(cpf || "").replace(/\D/g, "").slice(-5);
+  if (!digits) return "---";
+  if (digits.length <= 3) return digits;
+  return `${digits.slice(0, 3)}-${digits.slice(3)}`;
 }
 
 exports.handler = async (event) => {
