@@ -318,32 +318,42 @@ function printRaffle(){
     return;
   }
 
-  const tickets = classifiedCache.map((r, index) => {
+  const tickets = classifiedCache.map((r) => {
     const cpfFinal = formatCpfFinal(r.cpf || r.cpf_last_digits);
     const name = escapeHtml((r.name || "Participante").toUpperCase());
     const whatsapp = escapeHtml(formatPhone(r.whatsapp));
     const classifiedAt = escapeHtml(formatRaffleDate(r.finished_at || r.classified_at));
     const score = escapeHtml(r.score_text || `${r.correct_answers || 0}/${r.total_questions || 10}`);
-    const showCut = index < classifiedCache.length - 1;
 
     return `
       <section class="raffle-ticket">
         <div class="ticket-title">CRAQUE DA COPA HN NOTÍCIAS + VALE REDE DE POSTOS</div>
 
-        <div class="ticket-row name-row">
+        <div class="ticket-line ticket-main-line">
           <div class="ticket-name"><span>NOME:</span> <strong>${name}</strong></div>
           <div class="ticket-cpf"><span>CPF FINAL:</span> <strong>${cpfFinal}</strong></div>
         </div>
 
-        <div class="ticket-row details-row">
+        <div class="ticket-line ticket-details-line">
           <div><span>WHATSAPP:</span> <strong>${whatsapp}</strong></div>
           <div><span>CLASSIFICOU:</span> <strong>${classifiedAt}</strong></div>
           <div><span>ACERTOS:</span> <strong>${score}</strong></div>
         </div>
       </section>
-      ${showCut ? '<div class="cut-line"></div>' : ''}
     `;
-  }).join("");
+  });
+
+  const pages = [];
+  for(let i = 0; i < tickets.length; i += 6){
+    const pageTickets = tickets.slice(i, i + 6).map((ticket, idx, arr) => `
+      <div class="ticket-block">
+        ${ticket}
+        ${idx < arr.length - 1 ? '<div class="cut-line"></div>' : ''}
+      </div>
+    `).join("");
+
+    pages.push(`<main class="raffle-page">${pageTickets}</main>`);
+  }
 
   const w = window.open("", "_blank");
   w.document.write(`
@@ -354,14 +364,15 @@ function printRaffle(){
         <title>Papéis da urna</title>
         <style>
           @page{
-            size: A4 landscape;
-            margin: 6mm;
+            size: A4 portrait;
+            margin: 8mm;
           }
 
           *{
             box-sizing:border-box;
           }
 
+          html,
           body{
             margin:0;
             padding:0;
@@ -370,11 +381,34 @@ function printRaffle(){
             font-family:Arial, Helvetica, sans-serif;
           }
 
+          .raffle-page{
+            width:100%;
+            min-height:281mm;
+            display:flex;
+            flex-direction:column;
+            justify-content:flex-start;
+            page-break-after:always;
+            break-after:page;
+          }
+
+          .raffle-page:last-child{
+            page-break-after:auto;
+            break-after:auto;
+          }
+
+          .ticket-block{
+            width:100%;
+            margin:0;
+            padding:0;
+            page-break-inside:avoid;
+            break-inside:avoid;
+          }
+
           .raffle-ticket{
             width:100%;
-            height:30mm;
-            border:1.3px solid #111;
-            padding:2.5mm 4mm;
+            min-height:39mm;
+            border:1.2px solid #111;
+            padding:3mm 4mm;
             margin:0;
             page-break-inside:avoid;
             break-inside:avoid;
@@ -384,37 +418,43 @@ function printRaffle(){
           }
 
           .ticket-title{
-            font-size:8.5pt;
+            font-size:8.2pt;
             font-weight:800;
-            letter-spacing:.2px;
+            letter-spacing:.15px;
             text-transform:uppercase;
             line-height:1.05;
+            margin-bottom:2mm;
           }
 
-          .ticket-row{
+          .ticket-line{
             display:flex;
             align-items:center;
             justify-content:space-between;
-            gap:8mm;
-            line-height:1.08;
+            gap:4mm;
+            line-height:1.15;
           }
 
-          .name-row{
-            font-size:11pt;
+          .ticket-main-line{
+            font-size:10.8pt;
+            margin-bottom:2.2mm;
           }
 
-          .details-row{
-            font-size:9.6pt;
-            gap:5mm;
+          .ticket-details-line{
+            font-size:8.8pt;
+            gap:3mm;
           }
 
           .ticket-name{
-            flex:1;
+            flex:1 1 auto;
             min-width:0;
           }
 
           .ticket-cpf{
             flex:0 0 auto;
+            white-space:nowrap;
+          }
+
+          .ticket-details-line > div{
             white-space:nowrap;
           }
 
@@ -429,8 +469,8 @@ function printRaffle(){
           }
 
           .cut-line{
-            height:2mm;
-            border-top:1px dashed #555;
+            height:6mm;
+            border-top:1.1px dashed #333;
             margin:0;
             padding:0;
             page-break-inside:avoid;
@@ -445,7 +485,7 @@ function printRaffle(){
           }
         </style>
       </head>
-      <body>${tickets}</body>
+      <body>${pages.join("")}</body>
     </html>
   `);
   w.document.close();
