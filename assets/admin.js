@@ -52,6 +52,35 @@ function formatDateTime(iso){
   }
 }
 
+
+function formatCpfFinal(value){
+  const digits = onlyDigits(value).slice(-5);
+  if(!digits) return "---";
+  if(digits.length <= 3) return digits;
+  return `${digits.slice(0,3)}-${digits.slice(3)}`;
+}
+
+function formatRaffleDate(iso){
+  if(!iso) return "A confirmar";
+  try{
+    const d = new Date(iso);
+    const date = d.toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit", year:"numeric"});
+    const time = d.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+    return `${date} às ${time}`;
+  }catch(e){
+    return "A confirmar";
+  }
+}
+
+function escapeHtml(value){
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function requireLogin(){ if(ADMIN_PASSWORD){ $("loginBox").classList.add("hidden"); $("adminApp").classList.remove("hidden"); loadAdmin().catch(e=>alert(e.message)); } }
 async function loadAdmin(){ await loadCycles(); await loadQuestions(); await loadParticipants(); }
 
@@ -288,11 +317,140 @@ function printRaffle(){
     alert("Carregue os classificados do ciclo antes de imprimir.");
     return;
   }
-  const html=classifiedCache.map(r=>`<div style="border:1px dashed #333;padding:14px;margin:10px;width:280px;display:inline-block;font-family:Arial"><strong>${r.name}</strong><br>${r.city}<br>CPF final: ${r.cpf_last_digits}<br>Pontuação: ${r.score_text}</div>`).join("");
-  const w=window.open("","_blank");
-  w.document.write(`<html><head><title>Urna</title></head><body>${html}</body></html>`);
+
+  const tickets = classifiedCache.map((r, index) => {
+    const cpfFinal = formatCpfFinal(r.cpf || r.cpf_last_digits);
+    const name = escapeHtml((r.name || "Participante").toUpperCase());
+    const whatsapp = escapeHtml(formatPhone(r.whatsapp));
+    const classifiedAt = escapeHtml(formatRaffleDate(r.finished_at || r.classified_at));
+    const score = escapeHtml(r.score_text || `${r.correct_answers || 0}/${r.total_questions || 10}`);
+    const showCut = index < classifiedCache.length - 1;
+
+    return `
+      <section class="raffle-ticket">
+        <div class="ticket-title">CRAQUE DA COPA HN NOTÍCIAS + VALE REDE DE POSTOS</div>
+
+        <div class="ticket-row name-row">
+          <div class="ticket-name"><span>NOME:</span> <strong>${name}</strong></div>
+          <div class="ticket-cpf"><span>CPF FINAL:</span> <strong>${cpfFinal}</strong></div>
+        </div>
+
+        <div class="ticket-row details-row">
+          <div><span>WHATSAPP:</span> <strong>${whatsapp}</strong></div>
+          <div><span>CLASSIFICOU:</span> <strong>${classifiedAt}</strong></div>
+          <div><span>ACERTOS:</span> <strong>${score}</strong></div>
+        </div>
+      </section>
+      ${showCut ? '<div class="cut-line"></div>' : ''}
+    `;
+  }).join("");
+
+  const w = window.open("", "_blank");
+  w.document.write(`
+    <!doctype html>
+    <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8">
+        <title>Papéis da urna</title>
+        <style>
+          @page{
+            size: A4 landscape;
+            margin: 6mm;
+          }
+
+          *{
+            box-sizing:border-box;
+          }
+
+          body{
+            margin:0;
+            padding:0;
+            background:#fff;
+            color:#111;
+            font-family:Arial, Helvetica, sans-serif;
+          }
+
+          .raffle-ticket{
+            width:100%;
+            height:30mm;
+            border:1.3px solid #111;
+            padding:2.5mm 4mm;
+            margin:0;
+            page-break-inside:avoid;
+            break-inside:avoid;
+            display:flex;
+            flex-direction:column;
+            justify-content:space-between;
+          }
+
+          .ticket-title{
+            font-size:8.5pt;
+            font-weight:800;
+            letter-spacing:.2px;
+            text-transform:uppercase;
+            line-height:1.05;
+          }
+
+          .ticket-row{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:8mm;
+            line-height:1.08;
+          }
+
+          .name-row{
+            font-size:11pt;
+          }
+
+          .details-row{
+            font-size:9.6pt;
+            gap:5mm;
+          }
+
+          .ticket-name{
+            flex:1;
+            min-width:0;
+          }
+
+          .ticket-cpf{
+            flex:0 0 auto;
+            white-space:nowrap;
+          }
+
+          span{
+            font-size:.78em;
+            font-weight:700;
+            color:#333;
+          }
+
+          strong{
+            font-weight:800;
+          }
+
+          .cut-line{
+            height:2mm;
+            border-top:1px dashed #555;
+            margin:0;
+            padding:0;
+            page-break-inside:avoid;
+            break-inside:avoid;
+          }
+
+          @media print{
+            body{
+              -webkit-print-color-adjust:exact;
+              print-color-adjust:exact;
+            }
+          }
+        </style>
+      </head>
+      <body>${tickets}</body>
+    </html>
+  `);
   w.document.close();
-  w.print();
+  w.focus();
+  setTimeout(() => w.print(), 250);
 }
 async function saveWinner(){ const participantId=$("winnerParticipantInput").value; const selected=$("winnerParticipantInput").selectedOptions[0]; const payload={cycle_id:$("winnerCycleInput").value,participant_id:participantId,attempt_id:selected?.dataset?.attempt||null,draw_date:$("winnerDateInput").value||null,status:$("winnerStatusInput").value,notes:$("winnerNotesInput").value}; if(!payload.cycle_id||!payload.participant_id) return alert("Selecione ciclo e participante."); await api("/admin-winner",{method:"POST",body:JSON.stringify(payload)}); show("Vencedor registrado."); }
 
