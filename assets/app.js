@@ -26,6 +26,116 @@ function formatCPF(v){
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 }
 
+function maskCPF(v){
+  const clean = onlyDigits(v).slice(0,11);
+  if(clean.length !== 11) return "***.***.***-**";
+  return `***.***.***-${clean.slice(-3)}`;
+}
+
+function escapeHTML(value){
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function formatDateTime(iso){
+  if(!iso) return "A definir";
+  return new Date(iso).toLocaleString("pt-BR", {
+    day:"2-digit",
+    month:"2-digit",
+    year:"numeric",
+    hour:"2-digit",
+    minute:"2-digit"
+  });
+}
+
+function cycleStatusLabel(cycle){
+  if(!cycle) return "Em breve";
+  if(cycle.best_result){
+    const suffix = cycle.best_result.is_classified ? "classificado" : "não classificado";
+    return `${cycle.best_result.score_text} — ${suffix}`;
+  }
+  if(cycle.status === "active") return "Disponível para participar agora";
+  if(cycle.status === "scheduled") return "Em breve";
+  if(["closed", "draw_pending", "completed"].includes(cycle.status)) return "Encerrado";
+  return "Em breve";
+}
+
+function cycleStatusClass(cycle){
+  if(!cycle) return "soon";
+  if(cycle.status === "active") return cycle.best_result?.is_classified ? "done" : "active";
+  if(cycle.best_result?.is_classified) return "done";
+  if(cycle.best_result) return "missed";
+  return "soon";
+}
+
+function renderParticipantSummary(data){
+  const participant = data.participant || {};
+  const history = data.cycle_history || [];
+  const activeStage = state.activeCycle?.stage_order || data.active_cycle_stage_order;
+  const firstName = (participant.name || "").split(" ")[0] || "participante";
+
+  const cyclesHtml = history.map(cycle => {
+    const title = cycle.stage_order ? `Ciclo ${cycle.stage_order}` : (cycle.title || "Ciclo");
+    const isActive = state.activeCycle?.id && cycle.id === state.activeCycle.id;
+    const statusText = cycleStatusLabel(cycle);
+    const className = cycleStatusClass(cycle);
+
+    return `
+      <div class="participant-cycle-row ${className}">
+        <div>
+          <strong>${escapeHTML(title)}</strong>
+          ${isActive ? `<span class="badge gold">Aberto agora</span>` : ""}
+        </div>
+        <span>${escapeHTML(statusText)}</span>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="participant-summary">
+      <p class="participant-summary-intro">Encontramos seu cadastro. Você não precisa se cadastrar novamente para participar dos próximos ciclos.</p>
+
+      <div class="participant-profile">
+        <div>
+          <span>Nome</span>
+          <strong>${escapeHTML(participant.name)}</strong>
+        </div>
+        <div>
+          <span>WhatsApp</span>
+          <strong>${formatPhone(participant.whatsapp)}</strong>
+        </div>
+        <div>
+          <span>Cidade</span>
+          <strong>${escapeHTML(participant.city)}</strong>
+        </div>
+        <div>
+          <span>CPF</span>
+          <strong>${maskCPF(participant.cpf)}</strong>
+        </div>
+      </div>
+
+      <div class="participant-history">
+        <h3>Histórico da promoção</h3>
+        ${cyclesHtml || `<p class="meta">O histórico dos ciclos ainda não está disponível.</p>`}
+      </div>
+
+      <p class="participant-summary-note">Olá, ${escapeHTML(firstName)}! Se o ciclo atual estiver aberto, clique no botão abaixo para participar.</p>
+    </div>
+  `;
+}
+
+function hideRankingFeature(){
+  if($("ranking")) $("ranking").classList.add("hidden");
+  document.querySelectorAll('[data-show-section="ranking"]').forEach(el => {
+    el.classList.add("hidden");
+    el.setAttribute("aria-hidden", "true");
+  });
+}
+
 function formatPhone(v){
   v = onlyDigits(v).slice(0,11);
   if(v.length <= 10) {
@@ -145,12 +255,8 @@ async function showPublicSection(section){
   }
 
   if(section === "ranking"){
-    $("ranking").classList.remove("hidden");
-    await loadRanking();
-    window.scrollTo({
-      top:$("ranking").offsetTop - 20,
-      behavior:"smooth"
-    });
+    hideRankingFeature();
+    return;
   }
 
   if(section === "classificados"){
@@ -191,6 +297,7 @@ async function loadActiveCycle(){
     }
 
     setPartnerLinks();
+    hideRankingFeature();
 
     if(!c){
       $("startBtn").disabled = true;
@@ -205,32 +312,8 @@ async function loadActiveCycle(){
 }
 
 async function loadRanking(){
-  try{
-    const data = await api("/ranking?top=20");
-    const rows = data.items || [];
-    const top = rows.slice(0,3);
-
-    $("topCards").innerHTML = top.map(r => `
-      <div class="rank-card top">
-        <div class="rank-pos">${r.position}º lugar</div>
-        <div class="rank-name">${r.display_name}</div>
-        <div class="meta">${r.city}</div>
-        <div class="rank-score">${r.score_text} acertos</div>
-      </div>
-    `).join("") || `<div class="card"><p class="meta">Ainda não há classificados neste ciclo.</p></div>`;
-
-    $("rankingBody").innerHTML = rows.map(r => `
-      <tr>
-        <td>${r.position}º</td>
-        <td>${r.display_name}</td>
-        <td>${r.city}</td>
-        <td><span class="badge success">${r.score_text}</span></td>
-      </tr>
-    `).join("");
-
-  }catch(e){
-    console.error(e);
-  }
+  // Ranking público removido para não gerar frustração entre participantes empatados.
+  hideRankingFeature();
 }
 
 let allClassified = [];
@@ -275,16 +358,25 @@ async function identify(){
     hideFlow();
 
     if(data.already_classified){
-      $("alreadyText").textContent = `${data.participant.name}, você já está classificado neste ciclo com ${data.score_text}. Agora é só aguardar o sorteio junto com os demais acertadores. ${drawDateText()}`;
       state.participant = data.participant;
+      $("alreadyText").innerHTML = `
+        <strong>${escapeHTML(data.participant.name)}</strong>, você já está classificado neste ciclo com <strong>${escapeHTML(data.score_text)}</strong>.
+        Agora é só aguardar o sorteio junto com os demais acertadores. ${drawDateText()}
+        ${renderParticipantSummary(data)}
+      `;
       $("alreadyClassifiedSection").classList.remove("hidden");
       return;
     }
 
     if(data.exists){
       state.participant = data.participant;
-      $("knownTitle").textContent = `Olá, ${data.participant.name.split(" ")[0]}!`;
-      $("knownData").textContent = `Encontramos seu cadastro: ${data.participant.city} — WhatsApp ${formatPhone(data.participant.whatsapp)}.`;
+      const firstName = data.participant.name.split(" ")[0] || "participante";
+      $("knownTitle").textContent = `Olá, ${firstName}!`;
+      $("knownData").innerHTML = renderParticipantSummary(data);
+      if($("startAttemptKnownBtn")) {
+        const activeStage = state.activeCycle?.stage_order || data.active_cycle_stage_order || "";
+        $("startAttemptKnownBtn").textContent = activeStage ? `Participar do Ciclo ${activeStage}` : "Participar deste ciclo";
+      }
       $("knownSection").classList.remove("hidden");
     } else {
       state.participant = {cpf};
@@ -565,7 +657,6 @@ async function finishAttempt(){
       `Você acertou ${data.correct_answers} de ${data.total_questions} perguntas e já está na lista de classificados deste ciclo. Agora é só aguardar o sorteio junto com os demais acertadores. ${drawDateText()} A validação das regras do ciclo poderá ser conferida antes da entrega do prêmio.`;
 
     $("resultActions").innerHTML = `
-      <button class="btn" type="button" data-show-section="ranking">Ver ranking</button>
       <a class="btn share-btn" href="${shareUrl}" target="_blank" rel="noopener">Compartilhe o quiz</a>
       <a class="btn secondary" href="${hnUrl}" target="_blank" rel="noopener">Seguir HN Notícias</a>
       <a class="btn gold" href="${partnerUrl}" target="_blank" rel="noopener">${partnerText}</a>
@@ -580,7 +671,6 @@ async function finishAttempt(){
 
     $("resultActions").innerHTML = `
       <button class="btn big result-primary-action" id="tryAgainBtn" type="button">Participar novamente</button>
-      <button class="btn" type="button" data-show-section="ranking">Ver ranking</button>
       <a class="btn share-btn" href="${shareUrl}" target="_blank" rel="noopener">Compartilhe o quiz</a>
       <a class="btn secondary" href="${hnUrl}" target="_blank" rel="noopener">Seguir HN Notícias</a>
       <a class="btn gold" href="${partnerUrl}" target="_blank" rel="noopener">${partnerText}</a>
@@ -592,7 +682,7 @@ async function finishAttempt(){
     }, 0);
   }
 
-  await loadRanking();
+  hideRankingFeature();
 
   window.scrollTo({
     top:$("resultSection").offsetTop - 20,
@@ -628,8 +718,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("registerBtn").addEventListener("click", register);
   $("startAttemptKnownBtn").addEventListener("click", startAttempt);
   $("nextQuestionBtn").addEventListener("click", nextQuestion);
-  $("reloadRankingBtn").addEventListener("click", loadRanking);
-  $("classifiedSearch").addEventListener("input", renderClassified);
+  if($("reloadRankingBtn")) $("reloadRankingBtn").addEventListener("click", loadRanking);
+  if($("classifiedSearch")) $("classifiedSearch").addEventListener("input", renderClassified);
 
   document.addEventListener("click", async (e) => {
     const trigger = e.target.closest("[data-show-section]");
@@ -641,5 +731,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   await loadActiveCycle();
-  await loadRanking();
+  hideRankingFeature();
 });
