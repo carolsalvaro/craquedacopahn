@@ -843,7 +843,6 @@ body{
   box-shadow:0 10px 24px rgba(15,39,80,.06);
 }
 
-.participant-found-box h3,
 .participant-history-board h3{
   margin:0 0 12px;
   color:var(--blue-2);
@@ -854,9 +853,9 @@ body{
 .participant-found-name{
   display:block;
   color:var(--blue-2);
-  font-size:22px;
-  line-height:1.2;
-  margin-bottom:12px;
+  font-size:26px;
+  line-height:1.16;
+  margin-bottom:14px;
   word-break:break-word;
 }
 
@@ -975,13 +974,12 @@ body{
     border-radius:16px;
   }
 
-  .participant-found-box h3,
   .participant-history-board h3{
     font-size:18px;
   }
 
   .participant-found-name{
-    font-size:20px;
+    font-size:22px;
   }
 
   .participant-found-grid{

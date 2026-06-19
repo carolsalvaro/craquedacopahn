@@ -100,8 +100,7 @@ function cycleBodyText(cycle){
   const best = cycle?.best_result;
 
   if(best){
-    const suffix = best.is_classified ? "classificado" : "não classificado";
-    return `Resultado: ${best.score_text} — ${suffix}`;
+    return `Melhor resultado: ${best.score_text}`;
   }
 
   if(cycle?.status === "active"){
@@ -116,9 +115,8 @@ function cycleBodyText(cycle){
 }
 
 function cycleStatusClass(cycle){
-  if(cycle?.status === "active") return cycle?.best_result?.is_classified ? "done" : "active";
-  if(cycle?.best_result?.is_classified) return "done";
-  if(cycle?.best_result) return "missed";
+  if(cycle?.status === "active") return "active";
+  if(cycle?.best_result) return "closed";
   if(["closed", "draw_pending", "completed", "cancelled"].includes(cycle?.status)) return "closed";
   return "soon";
 }
@@ -146,7 +144,6 @@ function renderParticipantSummary(data){
   return `
     <div class="participant-summary participant-summary-grid-version">
       <div class="participant-found-box">
-        <h3>Cadastro encontrado</h3>
         <strong class="participant-found-name">${escapeHTML(participant.name)}</strong>
         <div class="participant-found-grid">
           <span>WhatsApp: <strong>${formatPhone(participant.whatsapp)}</strong></span>
