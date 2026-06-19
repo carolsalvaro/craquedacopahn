@@ -52,78 +52,115 @@ function formatDateTime(iso){
   });
 }
 
-function cycleStatusLabel(cycle){
-  if(!cycle) return "Em breve";
-  if(cycle.best_result){
-    const suffix = cycle.best_result.is_classified ? "classificado" : "não classificado";
-    return `${cycle.best_result.score_text} — ${suffix}`;
+function normalizeCycleHistory(data){
+  const rawHistory = Array.isArray(data?.cycle_history) ? data.cycle_history : [];
+  const activeStage = Number(state.activeCycle?.stage_order || data?.active_cycle_stage_order || 0);
+  const activeId = state.activeCycle?.id || data?.active_cycle_id || null;
+  const byStage = new Map();
+
+  rawHistory.forEach((cycle) => {
+    const stage = Number(cycle.stage_order || 0);
+    if(stage) byStage.set(stage, cycle);
+  });
+
+  const normalized = [];
+  for(let stage = 1; stage <= 5; stage++){
+    const existing = byStage.get(stage);
+    if(existing){
+      normalized.push(existing);
+      continue;
+    }
+
+    let status = "scheduled";
+    if(activeStage && stage < activeStage) status = "closed";
+    if(activeStage && stage === activeStage) status = "active";
+
+    normalized.push({
+      id: activeId && stage === activeStage ? activeId : null,
+      title: `Ciclo ${stage}`,
+      stage_order: stage,
+      status,
+      best_result: null
+    });
   }
-  if(cycle.status === "active") return "Disponível para participar agora";
-  if(cycle.status === "scheduled") return "Em breve";
-  if(["closed", "draw_pending", "completed"].includes(cycle.status)) return "Encerrado";
-  return "Em breve";
+
+  return normalized;
+}
+
+function cycleHeaderText(cycle){
+  const stage = Number(cycle?.stage_order || 0);
+  const prefix = stage ? `Ciclo ${stage}` : (cycle?.title || "Ciclo");
+
+  if(cycle?.status === "active") return `${prefix} — aberto`;
+  if(["closed", "draw_pending", "completed", "cancelled"].includes(cycle?.status)) return `${prefix} — encerrado`;
+  return `${prefix} — em breve`;
+}
+
+function cycleBodyText(cycle){
+  const best = cycle?.best_result;
+
+  if(best){
+    const suffix = best.is_classified ? "classificado" : "não classificado";
+    return `Resultado: ${best.score_text} — ${suffix}`;
+  }
+
+  if(cycle?.status === "active"){
+    return "Você já pode participar novamente neste novo ciclo.";
+  }
+
+  if(["closed", "draw_pending", "completed", "cancelled"].includes(cycle?.status)){
+    return "Resultado não registrado neste ciclo.";
+  }
+
+  return "Em breve.";
 }
 
 function cycleStatusClass(cycle){
-  if(!cycle) return "soon";
-  if(cycle.status === "active") return cycle.best_result?.is_classified ? "done" : "active";
-  if(cycle.best_result?.is_classified) return "done";
-  if(cycle.best_result) return "missed";
+  if(cycle?.status === "active") return cycle?.best_result?.is_classified ? "done" : "active";
+  if(cycle?.best_result?.is_classified) return "done";
+  if(cycle?.best_result) return "missed";
+  if(["closed", "draw_pending", "completed", "cancelled"].includes(cycle?.status)) return "closed";
   return "soon";
 }
 
 function renderParticipantSummary(data){
   const participant = data.participant || {};
-  const history = data.cycle_history || [];
-  const activeStage = state.activeCycle?.stage_order || data.active_cycle_stage_order;
-  const firstName = (participant.name || "").split(" ")[0] || "participante";
+  const history = normalizeCycleHistory(data);
+  const activeStage = Number(state.activeCycle?.stage_order || data.active_cycle_stage_order || 0);
 
   const cyclesHtml = history.map(cycle => {
-    const title = cycle.stage_order ? `Ciclo ${cycle.stage_order}` : (cycle.title || "Ciclo");
-    const isActive = state.activeCycle?.id && cycle.id === state.activeCycle.id;
-    const statusText = cycleStatusLabel(cycle);
     const className = cycleStatusClass(cycle);
+    const isActive = cycle.status === "active" || (activeStage && Number(cycle.stage_order) === activeStage);
 
     return `
-      <div class="participant-cycle-row ${className}">
-        <div>
-          <strong>${escapeHTML(title)}</strong>
+      <div class="participant-cycle-card ${className}">
+        <div class="participant-cycle-head">
+          <strong>${escapeHTML(cycleHeaderText(cycle))}</strong>
           ${isActive ? `<span class="badge gold">Aberto agora</span>` : ""}
         </div>
-        <span>${escapeHTML(statusText)}</span>
+        <p>${escapeHTML(cycleBodyText(cycle))}</p>
       </div>
     `;
   }).join("");
 
   return `
-    <div class="participant-summary">
-      <p class="participant-summary-intro">Encontramos seu cadastro. Você não precisa se cadastrar novamente para participar dos próximos ciclos.</p>
-
-      <div class="participant-profile">
-        <div>
-          <span>Nome</span>
-          <strong>${escapeHTML(participant.name)}</strong>
-        </div>
-        <div>
-          <span>WhatsApp</span>
-          <strong>${formatPhone(participant.whatsapp)}</strong>
-        </div>
-        <div>
-          <span>Cidade</span>
-          <strong>${escapeHTML(participant.city)}</strong>
-        </div>
-        <div>
-          <span>CPF</span>
-          <strong>${maskCPF(participant.cpf)}</strong>
+    <div class="participant-summary participant-summary-grid-version">
+      <div class="participant-found-box">
+        <h3>Cadastro encontrado</h3>
+        <strong class="participant-found-name">${escapeHTML(participant.name)}</strong>
+        <div class="participant-found-grid">
+          <span>WhatsApp: <strong>${formatPhone(participant.whatsapp)}</strong></span>
+          <span>Cidade: <strong>${escapeHTML(participant.city)}</strong></span>
+          <span>CPF: <strong>${maskCPF(participant.cpf)}</strong></span>
         </div>
       </div>
 
-      <div class="participant-history">
+      <div class="participant-history-board">
         <h3>Histórico da promoção</h3>
-        ${cyclesHtml || `<p class="meta">O histórico dos ciclos ainda não está disponível.</p>`}
+        <div class="participant-cycle-grid">
+          ${cyclesHtml}
+        </div>
       </div>
-
-      <p class="participant-summary-note">Olá, ${escapeHTML(firstName)}! Se o ciclo atual estiver aberto, clique no botão abaixo para participar.</p>
     </div>
   `;
 }
@@ -370,8 +407,7 @@ async function identify(){
 
     if(data.exists){
       state.participant = data.participant;
-      const firstName = data.participant.name.split(" ")[0] || "participante";
-      $("knownTitle").textContent = `Olá, ${firstName}!`;
+      $("knownTitle").textContent = "Cadastro encontrado";
       $("knownData").innerHTML = renderParticipantSummary(data);
       if($("startAttemptKnownBtn")) {
         const activeStage = state.activeCycle?.stage_order || data.active_cycle_stage_order || "";

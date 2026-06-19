@@ -768,3 +768,234 @@ body{
   background:var(--danger);
   color:#fff;
 }
+
+
+
+/* Ajustes Ciclo 2: ranking removido, banner/suporte somente no final e histórico do participante */
+body{
+  padding-bottom:0 !important;
+}
+
+#ranking,
+[data-show-section="ranking"]{
+  display:none !important;
+}
+
+.support-float{
+  position:static !important;
+  left:auto !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:auto !important;
+  z-index:1 !important;
+  display:flex !important;
+  align-items:center;
+  justify-content:center;
+  width:max-content;
+  max-width:calc(100% - 32px);
+  margin:34px auto 12px;
+  background:#0f9d58;
+  color:#fff;
+  text-decoration:none;
+  font-weight:950;
+  padding:12px 18px;
+  border-radius:999px;
+  box-shadow:0 14px 28px rgba(0,0,0,.14);
+}
+
+.rede-vale-fixed-banner{
+  position:static !important;
+  left:auto !important;
+  right:auto !important;
+  bottom:auto !important;
+  z-index:1 !important;
+  width:min(100%, 980px);
+  margin:0 auto 18px;
+  background:#063f27;
+  border:3px solid #d1a844;
+  border-radius:22px;
+  box-shadow:0 14px 32px rgba(0,0,0,.14);
+  overflow:hidden;
+}
+
+.rede-vale-fixed-banner img{
+  display:block;
+  width:100%;
+  height:auto !important;
+  max-height:none !important;
+  object-fit:contain !important;
+  object-position:center center;
+}
+
+.participant-summary-grid-version{
+  margin-top:14px;
+  display:grid;
+  gap:16px;
+  color:var(--ink);
+}
+
+.participant-found-box,
+.participant-history-board{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 10px 24px rgba(15,39,80,.06);
+}
+
+.participant-found-box h3,
+.participant-history-board h3{
+  margin:0 0 12px;
+  color:var(--blue-2);
+  font-size:20px;
+  line-height:1.15;
+}
+
+.participant-found-name{
+  display:block;
+  color:var(--blue-2);
+  font-size:22px;
+  line-height:1.2;
+  margin-bottom:12px;
+  word-break:break-word;
+}
+
+.participant-found-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+
+.participant-found-grid span{
+  display:block;
+  background:#f8fbff;
+  border:1px solid #dfe8f6;
+  border-radius:14px;
+  padding:10px 12px;
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.3;
+  font-weight:800;
+}
+
+.participant-found-grid strong{
+  color:var(--blue-2);
+  font-weight:950;
+}
+
+.participant-cycle-grid{
+  display:grid;
+  gap:10px;
+}
+
+.participant-cycle-card{
+  border:1px solid #dfe8f6;
+  border-left:5px solid #c9d6ee;
+  border-radius:16px;
+  padding:12px 14px;
+  background:#fbfcff;
+}
+
+.participant-cycle-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:4px;
+}
+
+.participant-cycle-head strong{
+  color:var(--blue-2);
+  font-size:16px;
+  line-height:1.2;
+}
+
+.participant-cycle-card p{
+  margin:0;
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.35;
+  font-weight:800;
+}
+
+.participant-cycle-card.active{
+  background:#f2fbf6;
+  border-left-color:var(--green);
+}
+
+.participant-cycle-card.active p{
+  color:var(--green);
+}
+
+.participant-cycle-card.done{
+  background:#f2fbf6;
+  border-left-color:var(--green);
+}
+
+.participant-cycle-card.done p{
+  color:var(--green);
+}
+
+.participant-cycle-card.missed{
+  background:#fffaf0;
+  border-left-color:var(--gold);
+}
+
+.participant-cycle-card.closed{
+  background:#f8fbff;
+  border-left-color:#94a3b8;
+}
+
+.participant-cycle-card.soon{
+  background:#fbfcff;
+  border-left-color:#c9d6ee;
+}
+
+@media(max-width:700px){
+  body{
+    padding-bottom:0 !important;
+  }
+
+  .support-float{
+    margin:28px auto 12px;
+    padding:11px 15px;
+    font-size:14px;
+  }
+
+  .rede-vale-fixed-banner{
+    width:calc(100% - 28px);
+    margin:0 auto 16px;
+    border-radius:16px;
+  }
+
+  .participant-found-box,
+  .participant-history-board{
+    padding:14px;
+    border-radius:16px;
+  }
+
+  .participant-found-box h3,
+  .participant-history-board h3{
+    font-size:18px;
+  }
+
+  .participant-found-name{
+    font-size:20px;
+  }
+
+  .participant-found-grid{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+
+  .participant-cycle-card{
+    padding:11px 12px;
+  }
+
+  .participant-cycle-head{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:6px;
+  }
+}
