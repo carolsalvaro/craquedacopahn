@@ -292,7 +292,7 @@ function cycleShortTitle(cycle){
   return cycle.stage_order ? `Ciclo ${cycle.stage_order}` : (cycle.title || "Ciclo");
 }
 
-function formatCycleCell(info){
+function formatCycleCell(info, cycle){
   if(!info || !info.participated){
     return '<span class="cycle-status-empty">Não participou</span>';
   }
@@ -301,7 +301,12 @@ function formatCycleCell(info){
     return `<span class="cycle-status-score">${info.best_result.score_text}</span>`;
   }
 
-  return '<span class="cycle-status-progress">Em andamento</span>';
+  const cycleStatus = String(cycle?.status || "");
+  if(cycleStatus === "active"){
+    return '<span class="cycle-status-progress">Em andamento</span>';
+  }
+
+  return '<span class="cycle-status-incomplete">Não finalizou</span>';
 }
 
 function cycleLastDate(info){
@@ -383,7 +388,15 @@ function participantMatchesCycleFilters(participant){
 
 function renderCycleManagementTable(){
   const cycles = cycleManagementCache.cycles || [];
-  const participants = (cycleManagementCache.participants || []).filter(participantMatchesCycleFilters);
+  const allParticipants = cycleManagementCache.participants || [];
+  const participants = allParticipants.filter(participantMatchesCycleFilters);
+
+  if($("cycleManagementListTotal")){
+    const totalText = participants.length === allParticipants.length
+      ? `${participants.length} participantes listados`
+      : `${participants.length} de ${allParticipants.length} participantes listados`;
+    $("cycleManagementListTotal").textContent = totalText;
+  }
 
   $("cycleManagementHead").innerHTML = `
     <tr>
@@ -409,7 +422,7 @@ function renderCycleManagementTable(){
       <td>${escapeHtml(p.city)}</td>
       ${cycles.map(c => {
         const info = p.cycles?.[c.id];
-        return `<td title="${cycleLastDate(info)}">${formatCycleCell(info)}</td>`;
+        return `<td title="${cycleLastDate(info)}">${formatCycleCell(info, c)}</td>`;
       }).join("")}
       <td>${formatDateTime(p.last_attempt_at)}</td>
     </tr>

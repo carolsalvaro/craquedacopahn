@@ -15,7 +15,7 @@
   <title>Admin — Craque da Copa HN</title>
   <link rel="stylesheet" href="/assets/style.css">
 </head>
-<body>
+<body class="admin-page">
   <div class="container">
     <header class="header">
       <a href="/"><img src="/assets/Logo_limpa.png" class="logo" alt="HN Notícias"></a>
@@ -45,7 +45,7 @@
         <a href="#" id="logoutBtn">Sair</a>
       </aside>
 
-      <section>
+      <section class="admin-content">
         <div id="adminNotice" class="toast hidden"></div>
 
         <div class="admin-tab" id="tab-dashboard">
@@ -184,7 +184,8 @@
             </div>
           </div>
 
-          <div class="card table-card cycle-management-table-card" style="margin-top:18px">
+          <div class="cycle-list-total" id="cycleManagementListTotal">Mostrando 0 participantes</div>
+          <div class="card table-card cycle-management-table-card" style="margin-top:10px">
             <table class="table cycle-management-table">
               <thead id="cycleManagementHead"></thead>
               <tbody id="cycleManagementBody"></tbody>
