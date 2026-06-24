@@ -4,6 +4,7 @@ let cyclesCache = [];
 let questionsCache = [];
 let participantsCache = [];
 let classifiedCache = [];
+let cycleManagementCache = { cycles: [], participants: [] };
 
 const $ = id => document.getElementById(id);
 
@@ -284,6 +285,188 @@ async function loadParticipantAnswers(participantId){
   window.scrollTo({top:$("participantAnswersCard").offsetTop - 20, behavior:"smooth"});
 }
 
+function cycleShortTitle(cycle){
+  if(!cycle) return "Ciclo";
+  const match = String(cycle.title || "").match(/Ciclo\s*\d+/i);
+  if(match) return match[0].replace(/\s+/g, " ");
+  return cycle.stage_order ? `Ciclo ${cycle.stage_order}` : (cycle.title || "Ciclo");
+}
+
+function formatCycleCell(info){
+  if(!info || !info.participated){
+    return '<span class="cycle-status-empty">Não participou</span>';
+  }
+
+  if(info.best_result){
+    return `<span class="cycle-status-score">${info.best_result.score_text}</span>`;
+  }
+
+  return '<span class="cycle-status-progress">Em andamento</span>';
+}
+
+function cycleLastDate(info){
+  if(!info || !info.last_attempt_at) return "";
+  return formatDateTime(info.last_attempt_at);
+}
+
+function renderCycleManagementStats(){
+  const cycles = cycleManagementCache.cycles || [];
+  const participants = cycleManagementCache.participants || [];
+
+  $("cycleManagementStats").innerHTML = cycles.map(c => {
+    const count = participants.filter(p => p.cycles?.[c.id]?.participated).length;
+    return `
+      <div class="cycle-stat-card">
+        <span>${cycleShortTitle(c)}</span>
+        <strong>${count}</strong>
+        <small>participantes</small>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderCycleManagementFilters(){
+  const cycles = cycleManagementCache.cycles || [];
+  const required = $("cycleRequiredFilters");
+  const missing = $("cycleMissingFilters");
+
+  if(!required || !missing) return;
+
+  required.innerHTML = cycles.map(c => `
+    <label class="cycle-check">
+      <input type="checkbox" class="cycle-required-filter" value="${c.id}">
+      <span>${cycleShortTitle(c)}</span>
+    </label>
+  `).join("");
+
+  missing.innerHTML = cycles.map(c => `
+    <label class="cycle-check">
+      <input type="checkbox" class="cycle-missing-filter" value="${c.id}">
+      <span>${cycleShortTitle(c)}</span>
+    </label>
+  `).join("");
+
+  document.querySelectorAll(".cycle-required-filter,.cycle-missing-filter").forEach(input => {
+    input.addEventListener("change", renderCycleManagementTable);
+  });
+}
+
+function selectedCycleFilters(selector){
+  return [...document.querySelectorAll(selector)]
+    .filter(input => input.checked)
+    .map(input => input.value);
+}
+
+function participantMatchesCycleFilters(participant){
+  const required = selectedCycleFilters(".cycle-required-filter");
+  const missing = selectedCycleFilters(".cycle-missing-filter");
+  const q = String($("cycleManagementSearch")?.value || "").toLowerCase().trim();
+
+  const hasRequired = required.every(cycleId => participant.cycles?.[cycleId]?.participated);
+  const hasMissing = missing.every(cycleId => !participant.cycles?.[cycleId]?.participated);
+
+  if(!hasRequired || !hasMissing) return false;
+
+  if(q){
+    const haystack = [
+      participant.name,
+      participant.cpf,
+      participant.whatsapp,
+      participant.city
+    ].map(v => String(v || "").toLowerCase()).join(" ");
+
+    if(!haystack.includes(q)) return false;
+  }
+
+  return true;
+}
+
+function renderCycleManagementTable(){
+  const cycles = cycleManagementCache.cycles || [];
+  const participants = (cycleManagementCache.participants || []).filter(participantMatchesCycleFilters);
+
+  $("cycleManagementHead").innerHTML = `
+    <tr>
+      <th>Nome</th>
+      <th>CPF</th>
+      <th>WhatsApp</th>
+      <th>Cidade</th>
+      ${cycles.map(c => `<th>${cycleShortTitle(c)}</th>`).join("")}
+      <th>Última participação</th>
+    </tr>
+  `;
+
+  if(!participants.length){
+    $("cycleManagementBody").innerHTML = `<tr><td colspan="${5 + cycles.length}">Nenhum participante encontrado com estes filtros.</td></tr>`;
+    return;
+  }
+
+  $("cycleManagementBody").innerHTML = participants.map(p => `
+    <tr>
+      <td>${escapeHtml(p.name)}</td>
+      <td>${formatCPF(p.cpf)}</td>
+      <td>${formatPhone(p.whatsapp)}</td>
+      <td>${escapeHtml(p.city)}</td>
+      ${cycles.map(c => {
+        const info = p.cycles?.[c.id];
+        return `<td title="${cycleLastDate(info)}">${formatCycleCell(info)}</td>`;
+      }).join("")}
+      <td>${formatDateTime(p.last_attempt_at)}</td>
+    </tr>
+  `).join("");
+}
+
+async function loadCycleManagement(){
+  if(!$("cycleManagementBody")) return;
+
+  const data = await api("/admin-participation-matrix");
+  cycleManagementCache = {
+    cycles: data.cycles || [],
+    participants: data.participants || []
+  };
+
+  renderCycleManagementStats();
+  renderCycleManagementFilters();
+  renderCycleManagementTable();
+}
+
+function clearCycleManagementFilters(){
+  document.querySelectorAll(".cycle-required-filter,.cycle-missing-filter").forEach(input => input.checked = false);
+  if($("cycleManagementSearch")) $("cycleManagementSearch").value = "";
+  renderCycleManagementTable();
+}
+
+function setupAdminMobileMenu(){
+  const sidebar = $("adminSidebar");
+  const toggle = $("adminMenuToggle");
+  if(!sidebar || !toggle) return;
+
+  const isMobile = () => window.matchMedia("(max-width:860px)").matches;
+
+  const setCollapsed = (collapsed) => {
+    if(!isMobile()){
+      sidebar.classList.remove("is-collapsed");
+      return;
+    }
+    sidebar.classList.toggle("is-collapsed", collapsed);
+  };
+
+  toggle.addEventListener("click", () => {
+    if(!isMobile()) return;
+    sidebar.classList.toggle("is-collapsed");
+  });
+
+  window.addEventListener("scroll", () => {
+    if(!isMobile()) return;
+    if($("adminApp")?.classList.contains("hidden")) return;
+    if(window.scrollY > 80) setCollapsed(true);
+  }, { passive: true });
+
+  window.addEventListener("resize", () => {
+    if(!isMobile()) sidebar.classList.remove("is-collapsed");
+  });
+}
+
 async function loadClassifiedAdmin(){
   let cycleId=$("classifiedCycleInput").value;
   if(!cycleId && cyclesCache.length){
@@ -497,12 +680,33 @@ async function saveWinner(){ const participantId=$("winnerParticipantInput").val
 document.addEventListener("DOMContentLoaded",()=>{
   $("loginBtn").addEventListener("click",()=>{ ADMIN_PASSWORD=$("adminPassword").value; sessionStorage.setItem("admin_password",ADMIN_PASSWORD); requireLogin(); });
   $("logoutBtn").addEventListener("click",e=>{ e.preventDefault(); sessionStorage.removeItem("admin_password"); location.reload(); });
-  document.querySelectorAll(".admin-nav[data-tab]").forEach(a=>a.addEventListener("click",e=>{ e.preventDefault(); document.querySelectorAll(".admin-nav").forEach(x=>x.classList.remove("active")); a.classList.add("active"); document.querySelectorAll(".admin-tab").forEach(x=>x.classList.add("hidden")); $(`tab-${a.dataset.tab}`).classList.remove("hidden"); }));
+  document.querySelectorAll(".admin-nav[data-tab]").forEach(a=>a.addEventListener("click",e=>{
+    e.preventDefault();
+    document.querySelectorAll(".admin-nav").forEach(x=>x.classList.remove("active"));
+    a.classList.add("active");
+    document.querySelectorAll(".admin-tab").forEach(x=>x.classList.add("hidden"));
+    $(`tab-${a.dataset.tab}`).classList.remove("hidden");
+
+    if(window.matchMedia("(max-width:860px)").matches){
+      $("adminSidebar")?.classList.add("is-collapsed");
+    }
+
+    if(a.dataset.tab === "cycle-management"){
+      loadCycleManagement().catch(err => alert(err.message));
+    }
+  }));
   $("reloadAdminBtn").addEventListener("click",()=>loadAdmin().catch(e=>alert(e.message)));
   $("saveCycleBtn").addEventListener("click",()=>saveCycle().catch(e=>alert(e.message))); $("newCycleBtn").addEventListener("click",clearCycleForm);
   $("saveQuestionBtn").addEventListener("click",()=>saveQuestion().catch(e=>alert(e.message))); $("newQuestionBtn").addEventListener("click",clearQuestionForm);
   $("reloadParticipantsBtn").addEventListener("click",()=>loadParticipants().catch(e=>alert(e.message))); $("saveParticipantBtn").addEventListener("click",()=>saveParticipant().catch(e=>alert(e.message))); $("clearParticipantBtn").addEventListener("click",clearParticipantForm); $("participantWhatsappInput").addEventListener("input",e=>e.target.value=formatPhone(e.target.value)); if($("closeParticipantAnswersBtn")) $("closeParticipantAnswersBtn").addEventListener("click",()=>$("participantAnswersCard").classList.add("hidden"));
   $("loadClassifiedBtn").addEventListener("click",()=>loadClassifiedAdmin().catch(e=>alert(e.message))); $("printRaffleBtn").addEventListener("click",printRaffle);
   $("winnerCycleInput").addEventListener("change",()=>{ $("classifiedCycleInput").value=$("winnerCycleInput").value; loadClassifiedAdmin().catch(()=>{}); }); $("saveWinnerBtn").addEventListener("click",()=>saveWinner().catch(e=>alert(e.message)));
+
+  if($("reloadCycleManagementBtn")) $("reloadCycleManagementBtn").addEventListener("click",()=>loadCycleManagement().catch(e=>alert(e.message)));
+  if($("applyCycleManagementFiltersBtn")) $("applyCycleManagementFiltersBtn").addEventListener("click",renderCycleManagementTable);
+  if($("clearCycleManagementFiltersBtn")) $("clearCycleManagementFiltersBtn").addEventListener("click",clearCycleManagementFilters);
+  if($("cycleManagementSearch")) $("cycleManagementSearch").addEventListener("input",renderCycleManagementTable);
+
+  setupAdminMobileMenu();
   requireLogin();
 });

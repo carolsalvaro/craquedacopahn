@@ -50,13 +50,23 @@ exports.handler = async (event) => {
         }
       });
 
+      const mappedParticipants = (participants || []).map(p => ({
+        ...p,
+        total_attempts: byParticipant.get(p.id)?.total_attempts || 0,
+        has_classified: byParticipant.get(p.id)?.has_classified || false,
+        last_attempt_at: byParticipant.get(p.id)?.last_attempt_at || null
+      }));
+
+      // A lista de Participações deve priorizar quem participou por último,
+      // não quem cadastrou o CPF por último.
+      mappedParticipants.sort((a, b) => {
+        const aDate = new Date(a.last_attempt_at || a.created_at || 0).getTime();
+        const bDate = new Date(b.last_attempt_at || b.created_at || 0).getTime();
+        return bDate - aDate;
+      });
+
       return ok({
-        participants: (participants || []).map(p => ({
-          ...p,
-          total_attempts: byParticipant.get(p.id)?.total_attempts || 0,
-          has_classified: byParticipant.get(p.id)?.has_classified || false,
-          last_attempt_at: byParticipant.get(p.id)?.last_attempt_at || null
-        }))
+        participants: mappedParticipants
       });
     }
 

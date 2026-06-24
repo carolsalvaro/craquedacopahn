@@ -33,11 +33,13 @@
     </section>
 
     <main id="adminApp" class="admin-layout hidden">
-      <aside class="card sidebar">
+      <aside class="card sidebar" id="adminSidebar">
+        <button class="admin-menu-toggle" id="adminMenuToggle" type="button">☰ Menu do admin</button>
         <a href="#" class="admin-nav active" data-tab="dashboard">Dashboard</a>
         <a href="#" class="admin-nav" data-tab="cycles">Ciclos</a>
         <a href="#" class="admin-nav" data-tab="questions">Perguntas</a>
         <a href="#" class="admin-nav" data-tab="participants">Participações</a>
+        <a href="#" class="admin-nav" data-tab="cycle-management">Gestão por Ciclos</a>
         <a href="#" class="admin-nav" data-tab="classified">Classificados/Urna</a>
         <a href="#" class="admin-nav" data-tab="winner">Vencedor</a>
         <a href="#" id="logoutBtn">Sair</a>
@@ -143,6 +145,50 @@
               <button class="btn secondary" id="closeParticipantAnswersBtn" type="button">Fechar</button>
             </div>
             <div id="participantAnswersWrap"></div>
+          </div>
+        </div>
+
+
+        <div class="admin-tab hidden" id="tab-cycle-management">
+          <div class="section-title">
+            <h2>Gestão por ciclos</h2>
+            <button class="btn secondary" id="reloadCycleManagementBtn" type="button">Atualizar</button>
+          </div>
+
+          <div class="card">
+            <h3>Filtrar participações por ciclo</h3>
+            <p class="meta">Use esta tela para encontrar, por exemplo, quem participou do Ciclo 1 e ainda não participou do Ciclo 2, ou quem participou dos Ciclos 1 e 2 e não voltou no Ciclo 3.</p>
+
+            <div class="cycle-management-stats" id="cycleManagementStats"></div>
+
+            <div class="cycle-filter-layout">
+              <div>
+                <label>Deve ter participado de:</label>
+                <div class="cycle-checkbox-grid" id="cycleRequiredFilters"></div>
+              </div>
+              <div>
+                <label>Deve NÃO ter participado de:</label>
+                <div class="cycle-checkbox-grid" id="cycleMissingFilters"></div>
+              </div>
+            </div>
+
+            <div class="cycle-search-row">
+              <div>
+                <label>Buscar por nome, CPF, WhatsApp ou cidade</label>
+                <input class="input" id="cycleManagementSearch" placeholder="Digite para filtrar">
+              </div>
+              <div class="actions-inline">
+                <button class="btn" id="applyCycleManagementFiltersBtn" type="button">Aplicar filtros</button>
+                <button class="btn muted" id="clearCycleManagementFiltersBtn" type="button">Limpar filtros</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card table-card cycle-management-table-card" style="margin-top:18px">
+            <table class="table cycle-management-table">
+              <thead id="cycleManagementHead"></thead>
+              <tbody id="cycleManagementBody"></tbody>
+            </table>
           </div>
         </div>
 

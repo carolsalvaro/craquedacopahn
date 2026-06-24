@@ -997,3 +997,177 @@ body{
     gap:6px;
   }
 }
+
+
+
+/* Melhorias do admin: menu mobile recolhível e gestão por ciclos */
+.admin-menu-toggle{
+  display:none;
+}
+
+.cycle-management-stats{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:12px;
+  margin:16px 0 18px;
+}
+
+.cycle-stat-card{
+  background:#f8fbff;
+  border:1px solid #dfe8f6;
+  border-radius:16px;
+  padding:14px;
+}
+
+.cycle-stat-card span{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+
+.cycle-stat-card strong{
+  display:block;
+  color:var(--blue-2);
+  font-size:28px;
+  line-height:1.1;
+  margin:4px 0;
+}
+
+.cycle-stat-card small{
+  color:var(--muted);
+  font-weight:800;
+}
+
+.cycle-filter-layout{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-top:14px;
+}
+
+.cycle-checkbox-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:8px;
+}
+
+.cycle-check{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:900;
+  color:#31405a;
+}
+
+.cycle-check input{
+  width:18px;
+  height:18px;
+  accent-color:var(--blue);
+}
+
+.cycle-search-row{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:16px;
+  align-items:end;
+  margin-top:16px;
+}
+
+.cycle-management-table-card{
+  overflow-x:auto;
+}
+
+.cycle-management-table{
+  min-width:1120px;
+}
+
+.cycle-management-table th,
+.cycle-management-table td{
+  white-space:nowrap;
+}
+
+.cycle-status-score{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:52px;
+  padding:6px 9px;
+  border-radius:999px;
+  background:#e9f7ef;
+  color:var(--success);
+  font-weight:950;
+}
+
+.cycle-status-progress{
+  display:inline-flex;
+  padding:6px 9px;
+  border-radius:999px;
+  background:#fff6df;
+  color:#936a19;
+  font-weight:900;
+}
+
+.cycle-status-empty{
+  color:var(--muted);
+  font-weight:800;
+}
+
+@media(max-width:860px){
+  .admin-menu-toggle{
+    display:flex;
+    width:100%;
+    align-items:center;
+    justify-content:space-between;
+    border:0;
+    background:var(--blue);
+    color:#fff;
+    border-radius:14px;
+    padding:12px 14px;
+    font-weight:950;
+    font-size:15px;
+    cursor:pointer;
+  }
+
+  .sidebar{
+    position:sticky;
+    top:8px;
+    z-index:80;
+    padding:12px;
+    margin-bottom:10px;
+  }
+
+  .sidebar.is-collapsed a{
+    display:none;
+  }
+
+  .sidebar.is-collapsed a.admin-nav.active{
+    display:block;
+    margin-top:10px;
+    background:#eef5ff;
+  }
+
+  .sidebar:not(.is-collapsed) a:first-of-type{
+    margin-top:10px;
+  }
+
+  .cycle-management-stats{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .cycle-filter-layout,
+  .cycle-search-row{
+    grid-template-columns:1fr;
+  }
+
+  .cycle-checkbox-grid{
+    grid-template-columns:1fr;
+  }
+}
