@@ -5,6 +5,7 @@ let questionsCache = [];
 let participantsCache = [];
 let classifiedCache = [];
 let cycleManagementCache = { cycles: [], participants: [] };
+let cycleManagementVisibleParticipants = [];
 
 const $ = id => document.getElementById(id);
 
@@ -42,6 +43,17 @@ function formatQuestionCycles(text){
 }
 
 function formatPhone(v){ v=onlyDigits(v).slice(0,11); if(v.length<=10) return v.replace(/(\d{2})(\d)/,"($1) $2").replace(/(\d{4})(\d)/,"$1-$2"); return v.replace(/(\d{2})(\d)/,"($1) $2").replace(/(\d{5})(\d)/,"$1-$2"); }
+function whatsappInternationalNumber(v){
+  const d = onlyDigits(v);
+  if(!d) return "";
+  if(d.startsWith("55") && (d.length === 12 || d.length === 13)) return d;
+  if(d.length === 10 || d.length === 11) return `55${d}`;
+  return d;
+}
+function csvCell(value){
+  const s = String(value ?? "");
+  return `"${s.replace(/"/g, '""')}"`;
+}
 function toLocalInput(iso){ if(!iso) return ""; const d=new Date(iso); const pad=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
 function periodText(c){ const a=c.start_at?new Date(c.start_at).toLocaleDateString("pt-BR"):"A definir"; const b=c.end_at?new Date(c.end_at).toLocaleDateString("pt-BR"):"A definir"; return `${a} a ${b}`; }
 function formatDateTime(iso){
@@ -386,10 +398,77 @@ function participantMatchesCycleFilters(participant){
   return true;
 }
 
+
+function cycleExportStatus(info, cycle){
+  if(!info || !info.participated) return "Não participou";
+  if(info.best_result) return info.best_result.score_text || "Participou";
+  if(String(cycle?.status || "") === "active") return "Em andamento";
+  return "Não finalizou";
+}
+
+function exportCycleWhatsappContacts(){
+  const cycles = cycleManagementCache.cycles || [];
+  const participants = cycleManagementVisibleParticipants || [];
+
+  if(!participants.length){
+    alert("Não há participantes na listagem atual para exportar.");
+    return;
+  }
+
+  const headers = [
+    "Nome",
+    "WhatsApp",
+    "Link WhatsApp",
+    "Cidade",
+    "CPF",
+    "Última participação",
+    "Ciclos participados",
+    ...cycles.map(c => cycleShortTitle(c))
+  ];
+
+  const rows = participants.map(p => {
+    const number = whatsappInternationalNumber(p.whatsapp);
+    const whatsappLink = number ? `https://wa.me/${number}` : "";
+    const ciclosParticipados = cycles
+      .filter(c => p.cycles?.[c.id]?.participated)
+      .map(c => cycleShortTitle(c))
+      .join(", ");
+
+    return [
+      p.name || "",
+      formatPhone(p.whatsapp),
+      whatsappLink,
+      p.city || "",
+      formatCPF(p.cpf),
+      formatDateTime(p.last_attempt_at),
+      ciclosParticipados,
+      ...cycles.map(c => cycleExportStatus(p.cycles?.[c.id], c))
+    ];
+  });
+
+  const csv = [headers, ...rows]
+    .map(row => row.map(csvCell).join(";"))
+    .join("\n");
+
+  const blob = new Blob(["\ufeff" + csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const today = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `whatsapp-gestao-ciclos-${today}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+
+  show(`${participants.length} contatos exportados para CSV.`);
+}
+
 function renderCycleManagementTable(){
   const cycles = cycleManagementCache.cycles || [];
   const allParticipants = cycleManagementCache.participants || [];
   const participants = allParticipants.filter(participantMatchesCycleFilters);
+  cycleManagementVisibleParticipants = participants;
 
   if($("cycleManagementListTotal")){
     const totalText = participants.length === allParticipants.length
@@ -718,6 +797,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   if($("reloadCycleManagementBtn")) $("reloadCycleManagementBtn").addEventListener("click",()=>loadCycleManagement().catch(e=>alert(e.message)));
   if($("applyCycleManagementFiltersBtn")) $("applyCycleManagementFiltersBtn").addEventListener("click",renderCycleManagementTable);
   if($("clearCycleManagementFiltersBtn")) $("clearCycleManagementFiltersBtn").addEventListener("click",clearCycleManagementFilters);
+  if($("exportCycleWhatsappBtn")) $("exportCycleWhatsappBtn").addEventListener("click",exportCycleWhatsappContacts);
   if($("cycleManagementSearch")) $("cycleManagementSearch").addEventListener("input",renderCycleManagementTable);
 
   setupAdminMobileMenu();

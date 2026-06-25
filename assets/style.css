@@ -1275,3 +1275,20 @@ body{
     font-size:11.5px;
   }
 }
+
+
+/* Exportação de WhatsApp na Gestão por Ciclos */
+.cycle-management-title-actions{
+  justify-content:flex-end;
+}
+
+@media(max-width:860px){
+  .cycle-management-title-actions{
+    width:100%;
+    justify-content:flex-start;
+  }
+
+  .cycle-management-title-actions .btn{
+    flex:1 1 160px;
+  }
+}
