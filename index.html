@@ -1031,6 +1031,151 @@
       }
     }
 
+
+    /* Último ciclo: regra especial da urna */
+    .last-cycle-rules{
+      margin:18px 0 12px;
+      text-align:left;
+      padding:18px;
+      border-radius:22px;
+      background:linear-gradient(135deg,#fff8e7 0%,#ffffff 58%,#f0f7ff 100%);
+      border:1px solid rgba(197,155,67,.42);
+      box-shadow:0 14px 30px rgba(197,155,67,.13);
+    }
+
+    .last-cycle-rules h3{
+      margin:10px 0 12px;
+      color:var(--blue-2);
+      font-size:22px;
+      line-height:1.15;
+      letter-spacing:-.02em;
+    }
+
+    .last-cycle-rules p{
+      margin:12px 0 0;
+      color:#40506a;
+      font-weight:850;
+      line-height:1.4;
+    }
+
+    .urn-chances-grid{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:8px;
+    }
+
+    .urn-chances-grid div{
+      background:#fff;
+      border:1px solid rgba(16,79,158,.12);
+      border-radius:16px;
+      padding:12px 8px;
+      text-align:center;
+    }
+
+    .urn-chances-grid strong{
+      display:block;
+      color:var(--blue-2);
+      font-size:13px;
+      line-height:1.2;
+      margin-bottom:5px;
+    }
+
+    .urn-chances-grid span{
+      display:block;
+      color:var(--green);
+      font-size:13px;
+      font-weight:950;
+      line-height:1.2;
+    }
+
+    @media(max-width:700px){
+      .last-cycle-rules{
+        padding:16px;
+      }
+
+      .last-cycle-rules h3{
+        font-size:20px;
+      }
+
+      .urn-chances-grid{
+        grid-template-columns:1fr;
+      }
+
+      .urn-chances-grid div{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:10px;
+        text-align:left;
+      }
+
+      .urn-chances-grid strong,
+      .urn-chances-grid span{
+        margin:0;
+      }
+    }
+
+
+    /* Reorganização do último ciclo para aumentar conversão */
+    .brazil-callout{
+      margin:14px 0 16px;
+      padding:16px 18px;
+      border-radius:20px;
+      background:linear-gradient(135deg,#fff6df 0%,#ffffff 56%,#eef7ff 100%);
+      border:1px solid rgba(197,155,67,.42);
+      text-align:left;
+      box-shadow:0 12px 28px rgba(197,155,67,.12);
+    }
+
+    .brazil-callout strong{
+      display:block;
+      color:var(--blue-2);
+      font-size:24px;
+      line-height:1.12;
+      letter-spacing:-.03em;
+      margin-bottom:6px;
+    }
+
+    .brazil-callout span{
+      display:block;
+      color:#40506a;
+      font-weight:850;
+      line-height:1.38;
+    }
+
+    .after-rules-cta{
+      margin-top:14px;
+      margin-bottom:18px;
+      justify-content:center;
+    }
+
+    .after-rules-cta .btn-cta-primary{
+      width:min(100%, 540px) !important;
+    }
+
+    .compact-cycle-calendar{
+      margin-top:24px;
+      opacity:.96;
+    }
+
+    .cycle-current-highlight{
+      margin-top:12px;
+    }
+
+    @media(max-width:700px){
+      .brazil-callout{
+        padding:15px;
+      }
+
+      .brazil-callout strong{
+        font-size:22px;
+      }
+
+      .after-rules-cta{
+        justify-content:stretch;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1041,11 +1186,16 @@
           <img src="/assets/Logo_limpa.png" class="hero-logo" alt="HN Notícias">
           <div class="kicker">Promoção HN Notícias + Vale Rede de Postos</div>
           <h1>Craque da Copa HN Notícias e Vale Rede de Postos</h1>
-          <div id="lastDayAlert" class="last-day-alert hidden" data-last-days="2026-07-09">
-            Último dia do penúltimo ciclo! Participe agora e concorra a 40 litros de gasolina.
+          <div id="lastDayAlert" class="last-day-alert hidden" data-last-days="2026-07-16">
+            Último ciclo! Participe agora e aumente suas chances na urna final.
           </div>
+          <div class="brazil-callout">
+            <strong>O Brasil ficou pelo caminho, mas você ainda pode ganhar!</strong>
+            <span>Participe do último ciclo e concorra a 40 litros de gasolina com a Vale Rede de Postos.</span>
+          </div>
+
           <p class="lead">
-            Teste seus conhecimentos sobre a Copa, entre no clima da competição e concorra a 40 litros de gasolina com a Vale Rede de Postos.
+            Teste seus conhecimentos sobre a Copa, entre no clima da competição e aproveite a última chance da promoção.
           </p>
           <p class="lead lead-small">
             A cada ciclo, responda <strong id="questionTotalText">10</strong> perguntas, acerte pelo menos <strong id="minCorrectText">6</strong>
@@ -1053,7 +1203,7 @@
           </p>
 
           <div class="cta-primary-block">
-            <p class="cta-helper">Participe agora e concorra a 40 litros de gasolina</p>
+            <p class="cta-helper">Última chance: participe e concorra a 40 litros de gasolina</p>
             <button class="btn big btn-cta-primary" type="button" data-start-quiz-shortcut>
               Começar quiz agora <span aria-hidden="true">→</span>
             </button>
@@ -1066,31 +1216,50 @@
             <div><strong>+1</strong><span>nova chance se não classificar</span></div>
           </div>
 
+          <div class="last-cycle-rules">
+            <span class="badge gold">Chance especial da reta final</span>
+            <h3>Quanto mais ciclos você ficou apto, mais nomes entram na urna.</h3>
+            <div class="urn-chances-grid">
+              <div><strong>1 ciclo apto</strong><span>1 nome na urna</span></div>
+              <div><strong>2 ciclos aptos</strong><span>2 nomes na urna</span></div>
+              <div><strong>3 ciclos aptos</strong><span>3 nomes na urna</span></div>
+              <div><strong>4 ciclos aptos</strong><span>4 nomes na urna</span></div>
+              <div><strong>5 ciclos aptos</strong><span>5 nomes na urna</span></div>
+            </div>
+            <p>Já participou antes? Continue no jogo. Quem ficou apto em mais ciclos terá mais chances no sorteio final.</p>
+          </div>
+
+          <div class="actions main-actions after-rules-cta">
+            <button class="btn big btn-cta-primary" type="button" data-start-quiz-shortcut>
+              Participar do último ciclo <span aria-hidden="true">→</span>
+            </button>
+          </div>
+
           <div class="cycle-explain cycle-calendar compact-cycle-calendar">
-            <strong>Como funcionam os ciclos?</strong>
+            <strong>Histórico dos ciclos</strong>
             <span>São 5 ciclos. Em cada ciclo, você pode se classificar uma vez para o sorteio de 40 litros de gasolina.</span>
             <ul class="cycle-schedule compact-timeline">
               <li data-cycle="1"><b>Ciclo 1:</b> 15/06 a 18/06 — sorteio realizado em 19/06 <span class="winner">Ganhadora: Saiuri Ferro</span></li>
               <li data-cycle="2"><b>Ciclo 2:</b> 20/06 a 25/06 — sorteio realizado em 26/06 <span class="winner">Ganhadora: Rose Rosso Dagostin</span></li>
               <li data-cycle="3"><b>Ciclo 3:</b> 27/06 a 02/07 — sorteio realizado em 03/07 <span class="winner">Ganhador: Roberto Leandro</span></li>
-              <li data-cycle="4" class="current-cycle-item"><b>Ciclo 4:</b> 03/07 a 09/07 — sorteio em 10/07</li>
-              <li data-cycle="5"><b>Ciclo 5:</b> 10/07 a 16/07 — sorteio em 17/07</li>
+              <li data-cycle="4"><b>Ciclo 4:</b> 03/07 a 09/07 — sorteio realizado em 10/07 <span class="winner">Ganhador: a definir</span></li>
+              <li data-cycle="5" class="current-cycle-item"><b>Ciclo 5:</b> 10/07 a 16/07 — sorteio em 17/07 <span class="winner">Último ciclo</span></li>
             </ul>
           </div>
 
           <div class="cycle-mini cycle-current-highlight">
             <span class="badge gold">Ciclo atual</span>
-            <h2><span id="cycleTitle">Ciclo 4</span> <span class="penultimate-badge">PENÚLTIMO CICLO</span></h2>
+            <h2><span id="cycleTitle">Ciclo 5</span> <span class="penultimate-badge">ÚLTIMO CICLO</span></h2>
             <div class="current-cycle-details">
-              <div><span>Participações até</span>09/07</div>
-              <div><span>Sorteio em</span>10/07</div>
+              <div><span>Participações até</span>16/07</div>
+              <div><span>Sorteio em</span>17/07</div>
               <div><span>Prêmio</span>40 litros de gasolina</div>
             </div>
             <p class="meta hidden" id="cyclePeriod"></p>
             <p class="hidden"><strong id="prizeName">Prêmio: 40 litros de gasolina</strong></p>
             <p id="prizeDescription" class="meta hidden"></p>
             <div class="final-callout">
-              Quem participa agora já entra no clima da reta final. O último ciclo terá chance especial para quem vem participando.
+              Neste último ciclo, quem já participou dos ciclos anteriores pode aumentar suas chances na urna final. Cada ciclo em que ficou apto vale mais um nome na urna.
             </div>
           </div>
 
