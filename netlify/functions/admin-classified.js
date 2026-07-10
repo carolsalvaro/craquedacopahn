@@ -26,6 +26,28 @@ exports.handler = async (event) => {
 
     if (error) throw error;
 
+    const participantIds = [...new Set((data || []).map(a => a.participant_id).filter(Boolean))];
+
+    const classifiedCyclesByParticipant = new Map();
+
+    if (participantIds.length) {
+      const { data: allClassifiedAttempts, error: allClassifiedError } = await supabase
+        .from("quiz_attempts")
+        .select("participant_id,cycle_id")
+        .in("participant_id", participantIds)
+        .eq("status", "finished")
+        .eq("is_classified", true);
+
+      if (allClassifiedError) throw allClassifiedError;
+
+      (allClassifiedAttempts || []).forEach(a => {
+        if (!classifiedCyclesByParticipant.has(a.participant_id)) {
+          classifiedCyclesByParticipant.set(a.participant_id, new Set());
+        }
+        if (a.cycle_id) classifiedCyclesByParticipant.get(a.participant_id).add(a.cycle_id);
+      });
+    }
+
     const seen = new Set();
     const items = [];
 
@@ -35,6 +57,8 @@ exports.handler = async (event) => {
 
       const p = Array.isArray(a.participant) ? a.participant[0] : a.participant;
       if (!p) return;
+
+      const classifiedCyclesCount = classifiedCyclesByParticipant.get(a.participant_id)?.size || 1;
 
       items.push({
         cycle_id: a.cycle_id,
@@ -48,7 +72,9 @@ exports.handler = async (event) => {
         correct_answers: a.correct_answers,
         total_questions: a.total_questions,
         score_text: `${a.correct_answers}/${a.total_questions}`,
-        finished_at: a.finished_at
+        finished_at: a.finished_at,
+        classified_cycles_count: classifiedCyclesCount,
+        final_raffle_entries: classifiedCyclesCount
       });
     });
 

@@ -597,8 +597,10 @@ function printRaffle(){
     const cpfFinal = formatCpfFinal(r.cpf || r.cpf_last_digits);
     const name = escapeHtml((r.name || "Participante").toUpperCase());
     const whatsapp = escapeHtml(formatPhone(r.whatsapp));
+    const city = escapeHtml(r.city || "-");
     const classifiedAt = escapeHtml(formatRaffleDate(r.finished_at || r.classified_at));
     const score = escapeHtml(r.score_text || `${r.correct_answers || 0}/${r.total_questions || 10}`);
+    const classifiedCycles = Number(r.classified_cycles_count || r.final_raffle_entries || 1);
 
     return `
       <section class="raffle-ticket">
@@ -611,6 +613,11 @@ function printRaffle(){
 
         <div class="ticket-line ticket-details-line">
           <div><span>WHATSAPP:</span> <strong>${whatsapp}</strong></div>
+          <div><span>CIDADE:</span> <strong>${city}</strong></div>
+          <div><span>CICLOS APTOS:</span> <strong>${classifiedCycles}/5</strong></div>
+        </div>
+
+        <div class="ticket-line ticket-details-line ticket-extra-line">
           <div><span>CLASSIFICOU:</span> <strong>${classifiedAt}</strong></div>
           <div><span>ACERTOS:</span> <strong>${score}</strong></div>
         </div>
@@ -683,7 +690,7 @@ function printRaffle(){
             width:100%;
             min-height:39mm;
             border:1.2px solid #111;
-            padding:3mm 4mm;
+            padding:2.7mm 4mm;
             margin:0;
             page-break-inside:avoid;
             break-inside:avoid;
@@ -711,12 +718,16 @@ function printRaffle(){
 
           .ticket-main-line{
             font-size:10.8pt;
-            margin-bottom:2.2mm;
+            margin-bottom:1.8mm;
           }
 
           .ticket-details-line{
-            font-size:8.8pt;
-            gap:3mm;
+            font-size:8.1pt;
+            gap:2.4mm;
+          }
+
+          .ticket-extra-line{
+            margin-top:1mm;
           }
 
           .ticket-name{
@@ -731,6 +742,7 @@ function printRaffle(){
 
           .ticket-details-line > div{
             white-space:nowrap;
+            flex:1 1 auto;
           }
 
           span{
