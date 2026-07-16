@@ -4,6 +4,7 @@ let cyclesCache = [];
 let questionsCache = [];
 let participantsCache = [];
 let classifiedCache = [];
+let pendingPrintedTicketsBatch = [];
 let cycleManagementCache = { cycles: [], participants: [] };
 let cycleManagementVisibleParticipants = [];
 
@@ -568,39 +569,132 @@ async function loadClassifiedAdmin(){
   }
   if(!cycleId) return alert("Selecione um ciclo.");
 
+  pendingPrintedTicketsBatch = [];
+  updateConfirmPrintedButton();
+
   const data=await api(`/admin-classified?cycle_id=${encodeURIComponent(cycleId)}`);
   classifiedCache=data.items||[];
+  window.rafflePrintMeta = {
+    isFinalCycle: data.is_final_cycle === true,
+    preprintMode: data.preprint_mode === true,
+    totalTickets: Number(data.total_tickets || 0),
+    totalPeople: Number(data.total_people || classifiedCache.length || 0),
+    cycle: data.cycle || null
+  };
 
   if(!classifiedCache.length){
-    $("adminClassifiedBody").innerHTML=`<tr><td colspan="5">Nenhum classificado encontrado para este ciclo.</td></tr>`;
+    let msg = "Nenhum classificado encontrado para este ciclo.";
+    if(window.rafflePrintMeta.isFinalCycle){
+      msg = window.rafflePrintMeta.preprintMode
+        ? "Nenhum ticket pendente para pré-impressão. Durante o ciclo aberto, só aparecem participantes que já ficaram aptos no Ciclo 5 e ainda não tiveram seus tickets confirmados como impressos."
+        : "Nenhum ticket pendente para impressão final. Quem já foi confirmado como impresso não aparece novamente.";
+    }
+    $("adminClassifiedBody").innerHTML=`<tr><td colspan="5">${msg}</td></tr>`;
     $("winnerParticipantInput").innerHTML="";
+    show(msg);
     return;
   }
 
-  $("adminClassifiedBody").innerHTML=classifiedCache.map(r=>`<tr>
-    <td>${r.name}</td>
-    <td>${r.cpf_last_digits}</td>
-    <td>${formatPhone(r.whatsapp)}</td>
-    <td>${r.city}</td>
-    <td>${r.score_text}</td>
-  </tr>`).join("");
+  if(window.rafflePrintMeta.isFinalCycle){
+    const label = window.rafflePrintMeta.preprintMode
+      ? `Pré-impressão: ${window.rafflePrintMeta.totalPeople} participantes, ${window.rafflePrintMeta.totalTickets} tickets pendentes.`
+      : `Impressão final: ${window.rafflePrintMeta.totalPeople} participantes, ${window.rafflePrintMeta.totalTickets} tickets pendentes.`;
+    show(label);
+  }
+
+  $("adminClassifiedBody").innerHTML=classifiedCache.map(r=>{
+    const entries = Number(r.final_raffle_entries || r.classified_cycles_count || 1);
+    const pending = Number(r.print_copies || 0);
+    const printed = Number(r.already_printed_count || 0);
+    const pendingNumbers = Array.isArray(r.pending_ticket_numbers) ? r.pending_ticket_numbers.join(", ") : "";
+
+    const scoreLabel = window.rafflePrintMeta.isFinalCycle
+      ? `${r.score_text}<br><small>Urna final: ${entries} total | ${printed} impressos | ${pending} pendentes${pendingNumbers ? ` (${pendingNumbers})` : ""}</small>`
+      : r.score_text;
+
+    return `<tr>
+      <td>${r.name}</td>
+      <td>${r.cpf_last_digits}</td>
+      <td>${formatPhone(r.whatsapp)}</td>
+      <td>${r.city}</td>
+      <td>${scoreLabel}</td>
+    </tr>`;
+  }).join("");
 
   $("winnerParticipantInput").innerHTML=classifiedCache.map(r=>`<option value="${r.participant_id}" data-attempt="${r.attempt_id}">${r.name} — ${r.score_text}</option>`).join("");
 }
+
+function buildRaffleTicketRecords(){
+  const isFinalCycle = window.rafflePrintMeta?.isFinalCycle === true;
+  const ticketRecords = [];
+
+  classifiedCache.forEach((r) => {
+    if(isFinalCycle){
+      const pendingNumbers = Array.isArray(r.pending_ticket_numbers)
+        ? r.pending_ticket_numbers.map(Number).filter(n => Number.isInteger(n) && n > 0)
+        : [];
+
+      pendingNumbers.forEach(ticketNumber => {
+        ticketRecords.push({
+          row: r,
+          ticketNumber,
+          total: Number(r.final_raffle_entries || r.classified_cycles_count || pendingNumbers.length || 1)
+        });
+      });
+
+      return;
+    }
+
+    ticketRecords.push({
+      row: r,
+      ticketNumber: 1,
+      total: 1
+    });
+  });
+
+  return ticketRecords;
+}
+
 function printRaffle(){
   if(!classifiedCache.length){
-    alert("Carregue os classificados do ciclo antes de imprimir.");
+    alert("Carregue os classificados/elegíveis do ciclo antes de imprimir.");
     return;
   }
 
-  const tickets = classifiedCache.map((r) => {
+  const isFinalCycle = window.rafflePrintMeta?.isFinalCycle === true;
+  const ticketRecords = buildRaffleTicketRecords();
+
+  if(!ticketRecords.length){
+    alert(isFinalCycle
+      ? "Nenhum ticket pendente para imprimir. Quem já foi confirmado como impresso não aparece novamente."
+      : "Nenhum ticket para imprimir."
+    );
+    return;
+  }
+
+  const cycleId = $("classifiedCycleInput")?.value || window.rafflePrintMeta?.cycle?.id || null;
+
+  pendingPrintedTicketsBatch = isFinalCycle
+    ? ticketRecords.map(({ row: r, ticketNumber, total }) => ({
+        cycle_id: cycleId,
+        participant_id: r.participant_id,
+        ticket_number: ticketNumber,
+        total_entries: total
+      }))
+    : [];
+
+  updateConfirmPrintedButton();
+
+  const tickets = ticketRecords.map(({ row: r, ticketNumber, total }) => {
     const cpfFinal = formatCpfFinal(r.cpf || r.cpf_last_digits);
     const name = escapeHtml((r.name || "Participante").toUpperCase());
     const whatsapp = escapeHtml(formatPhone(r.whatsapp));
     const city = escapeHtml(r.city || "-");
     const classifiedAt = escapeHtml(formatRaffleDate(r.finished_at || r.classified_at));
     const score = escapeHtml(r.score_text || `${r.correct_answers || 0}/${r.total_questions || 10}`);
-    const classifiedCycles = Number(r.classified_cycles_count || r.final_raffle_entries || 1);
+    const classifiedCycles = Math.max(0, Math.min(5, Number(r.classified_cycles_count || r.final_raffle_entries || total || 1)));
+    const ticketIndex = isFinalCycle ? `${ticketNumber}/${total}` : "1/1";
+    const dateLabel = isFinalCycle ? "PARTICIPOU C5:" : "CLASSIFICOU:";
 
     return `
       <section class="raffle-ticket">
@@ -618,8 +712,9 @@ function printRaffle(){
         </div>
 
         <div class="ticket-line ticket-details-line ticket-extra-line">
-          <div><span>CLASSIFICOU:</span> <strong>${classifiedAt}</strong></div>
-          <div><span>ACERTOS:</span> <strong>${score}</strong></div>
+          <div><span>${dateLabel}</span> <strong>${classifiedAt}</strong></div>
+          <div><span>ACERTOS C5:</span> <strong>${score}</strong></div>
+          <div><span>TICKET:</span> <strong>${ticketIndex}</strong></div>
         </div>
       </section>
     `;
@@ -690,7 +785,7 @@ function printRaffle(){
             width:100%;
             min-height:39mm;
             border:1.2px solid #111;
-            padding:2.7mm 4mm;
+            padding:2.6mm 4mm;
             margin:0;
             page-break-inside:avoid;
             break-inside:avoid;
@@ -700,30 +795,30 @@ function printRaffle(){
           }
 
           .ticket-title{
-            font-size:8.2pt;
+            font-size:8.1pt;
             font-weight:800;
             letter-spacing:.15px;
             text-transform:uppercase;
             line-height:1.05;
-            margin-bottom:2mm;
+            margin-bottom:1.8mm;
           }
 
           .ticket-line{
             display:flex;
             align-items:center;
             justify-content:space-between;
-            gap:4mm;
+            gap:3.2mm;
             line-height:1.15;
           }
 
           .ticket-main-line{
-            font-size:10.8pt;
-            margin-bottom:1.8mm;
+            font-size:10.6pt;
+            margin-bottom:1.7mm;
           }
 
           .ticket-details-line{
-            font-size:8.1pt;
-            gap:2.4mm;
+            font-size:7.9pt;
+            gap:2.2mm;
           }
 
           .ticket-extra-line{
@@ -778,7 +873,85 @@ function printRaffle(){
   w.document.close();
   w.focus();
   setTimeout(() => w.print(), 250);
+
+  if(isFinalCycle){
+    show(`Lote gerado com ${ticketRecords.length} tickets pendentes. Depois de conferir que imprimiu corretamente, clique em “Confirmar impressão do lote”.`);
+  }
 }
+
+async function confirmPrintedTicketsBatch(){
+  if(!pendingPrintedTicketsBatch.length){
+    alert("Nenhum lote aguardando confirmação. Primeiro clique em imprimir os tickets pendentes.");
+    return;
+  }
+
+  const cycleId = $("classifiedCycleInput")?.value || window.rafflePrintMeta?.cycle?.id || null;
+  if(!cycleId) return alert("Selecione o ciclo.");
+
+  const okConfirm = confirm(`Confirmar que ${pendingPrintedTicketsBatch.length} tickets foram impressos corretamente? Depois disso, eles não aparecerão novamente na impressão de pendentes.`);
+  if(!okConfirm) return;
+
+  const data = await api("/admin-mark-printed-tickets", {
+    method: "POST",
+    body: JSON.stringify({
+      cycle_id: cycleId,
+      tickets: pendingPrintedTicketsBatch
+    })
+  });
+
+  pendingPrintedTicketsBatch = [];
+  updateConfirmPrintedButton();
+  show(`${data.marked_count || 0} tickets confirmados como impressos.`);
+  await loadClassifiedAdmin();
+}
+
+function cancelPrintedTicketsBatch(){
+  pendingPrintedTicketsBatch = [];
+  updateConfirmPrintedButton();
+  show("Lote descartado. Nada foi marcado como impresso.");
+}
+
+function setupRafflePrintControls(){
+  const printBtn = $("printRaffleBtn");
+  if(!printBtn || $("confirmPrintedTicketsBtn")) return;
+
+  const confirmBtn = document.createElement("button");
+  confirmBtn.className = "btn green";
+  confirmBtn.type = "button";
+  confirmBtn.id = "confirmPrintedTicketsBtn";
+  confirmBtn.textContent = "Confirmar impressão do lote";
+  confirmBtn.style.display = "none";
+  confirmBtn.addEventListener("click", () => confirmPrintedTicketsBatch().catch(e => alert(e.message)));
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "btn secondary";
+  cancelBtn.type = "button";
+  cancelBtn.id = "cancelPrintedTicketsBtn";
+  cancelBtn.textContent = "Cancelar lote";
+  cancelBtn.style.display = "none";
+  cancelBtn.addEventListener("click", cancelPrintedTicketsBatch);
+
+  printBtn.insertAdjacentElement("afterend", confirmBtn);
+  confirmBtn.insertAdjacentElement("afterend", cancelBtn);
+}
+
+function updateConfirmPrintedButton(){
+  const confirmBtn = $("confirmPrintedTicketsBtn");
+  const cancelBtn = $("cancelPrintedTicketsBtn");
+  if(!confirmBtn || !cancelBtn) return;
+
+  if(pendingPrintedTicketsBatch.length){
+    confirmBtn.style.display = "";
+    cancelBtn.style.display = "";
+    confirmBtn.textContent = `Confirmar impressão do lote (${pendingPrintedTicketsBatch.length} tickets)`;
+  }else{
+    confirmBtn.style.display = "none";
+    cancelBtn.style.display = "none";
+    confirmBtn.textContent = "Confirmar impressão do lote";
+  }
+}
+
+
 async function saveWinner(){ const participantId=$("winnerParticipantInput").value; const selected=$("winnerParticipantInput").selectedOptions[0]; const payload={cycle_id:$("winnerCycleInput").value,participant_id:participantId,attempt_id:selected?.dataset?.attempt||null,draw_date:$("winnerDateInput").value||null,status:$("winnerStatusInput").value,notes:$("winnerNotesInput").value}; if(!payload.cycle_id||!payload.participant_id) return alert("Selecione ciclo e participante."); await api("/admin-winner",{method:"POST",body:JSON.stringify(payload)}); show("Vencedor registrado."); }
 
 document.addEventListener("DOMContentLoaded",()=>{
@@ -812,6 +985,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   if($("exportCycleWhatsappBtn")) $("exportCycleWhatsappBtn").addEventListener("click",exportCycleWhatsappContacts);
   if($("cycleManagementSearch")) $("cycleManagementSearch").addEventListener("input",renderCycleManagementTable);
 
+  setupRafflePrintControls();
   setupAdminMobileMenu();
   requireLogin();
 });
