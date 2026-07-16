@@ -24,6 +24,31 @@ function cycleSetByParticipant(attempts) {
   return map;
 }
 
+function buildCycleLabelMap(cycles) {
+  const map = new Map();
+  (cycles || []).forEach(cycle => {
+    if (!cycle?.id) return;
+    const order = Number(cycle.stage_order || 0);
+    const label = order > 0 ? `C${order}` : (cycle.slug || cycle.title || String(cycle.id));
+    map.set(cycle.id, label);
+  });
+  return map;
+}
+
+function cycleLabelsFromSet(cycleSet, cycleLabelMap) {
+  return [...(cycleSet || new Set())]
+    .map(cycleId => ({
+      cycleId,
+      label: cycleLabelMap.get(cycleId) || String(cycleId)
+    }))
+    .sort((a, b) => {
+      const na = Number(String(a.label).replace(/\D/g, "")) || 999;
+      const nb = Number(String(b.label).replace(/\D/g, "")) || 999;
+      return na - nb;
+    })
+    .map(item => item.label);
+}
+
 exports.handler = async (event) => {
   try {
     checkAdmin(event);
@@ -42,6 +67,14 @@ exports.handler = async (event) => {
     const isFinalCycle =
       Number(selectedCycle?.stage_order) === 5 ||
       selectedCycle?.slug === "rede-vale-ciclo-5";
+
+    const { data: allCycles, error: allCyclesError } = await supabase
+      .from("quiz_cycles")
+      .select("id,title,slug,stage_order");
+
+    if (allCyclesError) throw allCyclesError;
+
+    const cycleLabelMap = buildCycleLabelMap(allCycles);
 
     if (isFinalCycle) {
       const isCycleOpen = selectedCycle?.status === "active";
@@ -118,6 +151,7 @@ exports.handler = async (event) => {
 
         const classifiedCyclesSet = classifiedCyclesByParticipant.get(a.participant_id) || new Set();
         const classifiedCyclesCount = classifiedCyclesSet.size;
+        const classifiedCyclesLabels = cycleLabelsFromSet(classifiedCyclesSet, cycleLabelMap);
 
         if (classifiedCyclesCount <= 0) return;
 
@@ -151,6 +185,7 @@ exports.handler = async (event) => {
           classified_in_selected_cycle: isClassifiedInFinalCycle,
           participated_last_cycle: true,
           classified_cycles_count: classifiedCyclesCount,
+          classified_cycles_labels: classifiedCyclesLabels,
           final_raffle_entries: classifiedCyclesCount,
           already_printed_count: printedSet.size,
           pending_ticket_numbers: pendingTicketNumbers,
@@ -215,7 +250,9 @@ exports.handler = async (event) => {
       const p = getParticipant(a);
       if (!p) return;
 
-      const classifiedCyclesCount = classifiedCyclesByParticipant.get(a.participant_id)?.size || 1;
+      const classifiedCyclesSet = classifiedCyclesByParticipant.get(a.participant_id) || new Set([a.cycle_id]);
+      const classifiedCyclesCount = classifiedCyclesSet.size || 1;
+      const classifiedCyclesLabels = cycleLabelsFromSet(classifiedCyclesSet, cycleLabelMap);
 
       items.push({
         cycle_id: a.cycle_id,
@@ -231,6 +268,7 @@ exports.handler = async (event) => {
         score_text: `${a.correct_answers}/${a.total_questions}`,
         finished_at: a.finished_at,
         classified_cycles_count: classifiedCyclesCount,
+        classified_cycles_labels: classifiedCyclesLabels,
         final_raffle_entries: classifiedCyclesCount,
         already_printed_count: 0,
         pending_ticket_numbers: [1],
