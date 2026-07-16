@@ -693,7 +693,6 @@ function printRaffle(){
     const classifiedAt = escapeHtml(formatRaffleDate(r.finished_at || r.classified_at));
     const score = escapeHtml(r.score_text || `${r.correct_answers || 0}/${r.total_questions || 10}`);
     const classifiedCycles = Math.max(0, Math.min(5, Number(r.classified_cycles_count || r.final_raffle_entries || total || 1)));
-    const ticketIndex = isFinalCycle ? `${ticketNumber}/${total}` : "1/1";
     const dateLabel = isFinalCycle ? "PARTICIPOU C5:" : "CLASSIFICOU:";
 
     return `
@@ -708,13 +707,12 @@ function printRaffle(){
         <div class="ticket-line ticket-details-line">
           <div><span>WHATSAPP:</span> <strong>${whatsapp}</strong></div>
           <div><span>CIDADE:</span> <strong>${city}</strong></div>
-          <div><span>CICLOS APTOS:</span> <strong>${classifiedCycles}/5</strong></div>
+          <div><span>CHANCES AUMENTADAS EM:</span> <strong>${classifiedCycles}x</strong></div>
         </div>
 
         <div class="ticket-line ticket-details-line ticket-extra-line">
           <div><span>${dateLabel}</span> <strong>${classifiedAt}</strong></div>
           <div><span>ACERTOS C5:</span> <strong>${score}</strong></div>
-          <div><span>TICKET:</span> <strong>${ticketIndex}</strong></div>
         </div>
       </section>
     `;
