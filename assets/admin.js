@@ -3,6 +3,7 @@ let ADMIN_PASSWORD = sessionStorage.getItem("admin_password") || "";
 let cyclesCache = [];
 let questionsCache = [];
 let participantsCache = [];
+let participantReportSelection = new Set();
 let classifiedCache = [];
 let pendingPrintedTicketsBatch = [];
 let cycleManagementCache = { cycles: [], participants: [] };
@@ -161,13 +162,42 @@ async function loadParticipants(){
 
   const data = await api("/admin-participants");
   participantsCache = data.participants || [];
+  participantReportSelection = new Set(participantsCache.map(p => p.id));
+
+  renderParticipantsTable();
+}
+
+function updateParticipantsExportMeta(){
+  const selected = participantReportSelection.size;
+  const total = participantsCache.length;
+
+  if($("participantsExportMeta")){
+    $("participantsExportMeta").textContent = `${selected} de ${total} participantes marcados para exportação. Desmarque quem não deve entrar no relatório.`;
+  }
+
+  if($("selectAllParticipantsCheckbox")){
+    $("selectAllParticipantsCheckbox").checked = total > 0 && selected === total;
+    $("selectAllParticipantsCheckbox").indeterminate = selected > 0 && selected < total;
+  }
+}
+
+function renderParticipantsTable(){
+  if(!$("participantsBody")) return;
+
+  if(!participantsCache.length){
+    $("participantsBody").innerHTML = `<tr><td colspan="10">Nenhum participante encontrado.</td></tr>`;
+    updateParticipantsExportMeta();
+    return;
+  }
 
   $("participantsBody").innerHTML = participantsCache.map(p => `
     <tr>
+      <td><input type="checkbox" class="participant-report-checkbox" data-id="${p.id}" ${participantReportSelection.has(p.id) ? "checked" : ""} title="Incluir no relatório"></td>
       <td>${p.name}</td>
       <td>${formatCPF(p.cpf)}</td>
       <td>${formatPhone(p.whatsapp)}</td>
       <td>${p.city}</td>
+      <td>${p.participated_cycles_text || "-"}</td>
       <td>${formatDateTime(p.last_attempt_at)}</td>
       <td>${p.total_attempts || 0}</td>
       <td>${p.has_classified ? '<span class="badge success">Sim</span>' : '<span class="badge">Não</span>'}</td>
@@ -181,6 +211,14 @@ async function loadParticipants(){
     </tr>
   `).join("");
 
+  document.querySelectorAll(".participant-report-checkbox").forEach(input => {
+    input.addEventListener("change", () => {
+      if(input.checked) participantReportSelection.add(input.dataset.id);
+      else participantReportSelection.delete(input.dataset.id);
+      updateParticipantsExportMeta();
+    });
+  });
+
   document.querySelectorAll(".edit-participant-btn").forEach(btn => {
     btn.addEventListener("click", () => editParticipant(btn.dataset.id));
   });
@@ -192,6 +230,75 @@ async function loadParticipants(){
   document.querySelectorAll("[data-delete-participation]").forEach(btn => {
     btn.addEventListener("click", () => deleteParticipation(btn.dataset.deleteParticipation).catch(e => alert(e.message)));
   });
+
+  updateParticipantsExportMeta();
+}
+
+function setAllParticipantsReportSelection(checked){
+  participantReportSelection = new Set(checked ? participantsCache.map(p => p.id) : []);
+  renderParticipantsTable();
+}
+
+function exportParticipantsReport(){
+  const selectedParticipants = participantsCache.filter(p => participantReportSelection.has(p.id));
+
+  if(!selectedParticipants.length){
+    alert("Nenhum participante selecionado para exportar.");
+    return;
+  }
+
+  const headers = [
+    "Nome",
+    "CPF",
+    "WhatsApp",
+    "Cidade",
+    "Ciclos participados",
+    "Ciclos aptos/classificados",
+    "Última participação",
+    "Tentativas",
+    "Classificado em algum ciclo"
+  ];
+
+  const rows = selectedParticipants.map(p => [
+    p.name || "",
+    formatCPF(p.cpf),
+    formatPhone(p.whatsapp),
+    p.city || "",
+    p.participated_cycles_text || "",
+    p.classified_cycles_text || "",
+    formatDateTime(p.last_attempt_at),
+    p.total_attempts || 0,
+    p.has_classified ? "Sim" : "Não"
+  ]);
+
+  const htmlRows = [headers, ...rows].map((row, rowIndex) => {
+    const tag = rowIndex === 0 ? "th" : "td";
+    return `<tr>${row.map(value => `<${tag}>${String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</${tag}>`).join("")}</tr>`;
+  }).join("");
+
+  const html = `
+    <html>
+      <head>
+        <meta charset="utf-8">
+      </head>
+      <body>
+        <table>${htmlRows}</table>
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob(["\ufeff" + html], {type:"application/vnd.ms-excel;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const today = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `participantes-vale-rede-de-postos-${today}.xls`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+
+  show(`${selectedParticipants.length} participantes exportados para Excel.`);
 }
 
 function clearParticipantForm(){
@@ -979,7 +1086,12 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("reloadAdminBtn").addEventListener("click",()=>loadAdmin().catch(e=>alert(e.message)));
   $("saveCycleBtn").addEventListener("click",()=>saveCycle().catch(e=>alert(e.message))); $("newCycleBtn").addEventListener("click",clearCycleForm);
   $("saveQuestionBtn").addEventListener("click",()=>saveQuestion().catch(e=>alert(e.message))); $("newQuestionBtn").addEventListener("click",clearQuestionForm);
-  $("reloadParticipantsBtn").addEventListener("click",()=>loadParticipants().catch(e=>alert(e.message))); $("saveParticipantBtn").addEventListener("click",()=>saveParticipant().catch(e=>alert(e.message))); $("clearParticipantBtn").addEventListener("click",clearParticipantForm); $("participantWhatsappInput").addEventListener("input",e=>e.target.value=formatPhone(e.target.value)); if($("closeParticipantAnswersBtn")) $("closeParticipantAnswersBtn").addEventListener("click",()=>$("participantAnswersCard").classList.add("hidden"));
+  $("reloadParticipantsBtn").addEventListener("click",()=>loadParticipants().catch(e=>alert(e.message)));
+  if($("selectAllParticipantsReportBtn")) $("selectAllParticipantsReportBtn").addEventListener("click",()=>setAllParticipantsReportSelection(true));
+  if($("clearParticipantsReportBtn")) $("clearParticipantsReportBtn").addEventListener("click",()=>setAllParticipantsReportSelection(false));
+  if($("exportParticipantsReportBtn")) $("exportParticipantsReportBtn").addEventListener("click",exportParticipantsReport);
+  if($("selectAllParticipantsCheckbox")) $("selectAllParticipantsCheckbox").addEventListener("change",e=>setAllParticipantsReportSelection(e.target.checked));
+  $("saveParticipantBtn").addEventListener("click",()=>saveParticipant().catch(e=>alert(e.message))); $("clearParticipantBtn").addEventListener("click",clearParticipantForm); $("participantWhatsappInput").addEventListener("input",e=>e.target.value=formatPhone(e.target.value)); if($("closeParticipantAnswersBtn")) $("closeParticipantAnswersBtn").addEventListener("click",()=>$("participantAnswersCard").classList.add("hidden"));
   $("loadClassifiedBtn").addEventListener("click",()=>loadClassifiedAdmin().catch(e=>alert(e.message))); $("printRaffleBtn").addEventListener("click",printRaffle);
   $("winnerCycleInput").addEventListener("change",()=>{ $("classifiedCycleInput").value=$("winnerCycleInput").value; loadClassifiedAdmin().catch(()=>{}); }); $("saveWinnerBtn").addEventListener("click",()=>saveWinner().catch(e=>alert(e.message)));
 
